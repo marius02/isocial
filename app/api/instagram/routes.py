@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from dotenv import load_dotenv
 import os
 import requests
+from api.instagram.utils.url_converter import extract_permalink_from_url
 
 load_dotenv()
 
@@ -36,14 +37,6 @@ def get_user_pages():
 
     return []
 
-# You can also inject the database session and use the FacebookRepository
-# to interact with the database if needed
-
-# Example of injecting the database session and repository:
-# def get_facebook_post_comments(post_id: str, db: Session = Depends(get_db)):
-#     facebook_repo = FacebookRepository(db)
-#     # Perform database operations using the repository
-
 
 # facebook page should be connected to instagram business account
 @router.get("/{facebook_page_id}/user-ig-business-account")
@@ -70,20 +63,25 @@ def get_user_ig_business_account(facebook_page_id):
     return None
 
 
-@router.get("/{account_id}/media-and-comments")
-def get_ig_business_account_media(account_id):
-    api_endpoint = f'https://graph.facebook.com/v17.0/{account_id}/media'
+@router.get("/comments")
+def filter_media_by_permalink(user_ig_business_account_id: str, post_url: str):
+    permalink = extract_permalink_from_url(post_url)
+    print(permalink)
+    api_endpoint = f"https://graph.facebook.com/v17.0/{user_ig_business_account_id}/media"
     params = {
-        'access_token': ACCESS_TOKEN,
-        'fields': 'comments{replies{text,id},text},comments_count,is_comment_enabled,media_url,media_type'
+        "access_token": ACCESS_TOKEN,
+        "fields": "caption,permalink,comments"
     }
+
     try:
         response = requests.get(api_endpoint, params=params)
         response.raise_for_status()
 
         json_data = response.json()
-        if 'data' in json_data:
-            return json_data['data']
+        if "data" in json_data:
+            filtered_media = [media for media in json_data["data"]
+                              if media.get("permalink") == permalink]
+            return filtered_media
         else:
             print('Error: Response data is missing "data" field.')
     except requests.exceptions.HTTPError as err:

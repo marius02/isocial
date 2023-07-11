@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from dotenv import load_dotenv
 import googleapiclient.discovery
 import os
+from api.youtube.utils.url_converter import extract_video_id
 
 
 load_dotenv()
@@ -16,8 +17,10 @@ router = APIRouter(prefix="/youtube", tags=["YouTube Google API"])
 API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 
-@router.get("/{video_id}/comments")
-def get_comments(video_id):
+@router.get("/comments")
+def get_comments(video_url):
+
+    video_id = extract_video_id(video_url)
 
     api_service_name = "youtube"
     api_version = "v3"
