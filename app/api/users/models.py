@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import uuid
 
 from fastapi_users import schemas
@@ -13,3 +14,14 @@ class UserCreate(schemas.BaseUserCreate):
 
 class UserUpdate(schemas.BaseUserUpdate):
     pass
+
+
+class AuthPassChange(BaseModel):
+    email: str
+    password: str
+    new_password: str
+
+
+class Auth(BaseModel):
+    username: str
+    password: str
