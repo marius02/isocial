@@ -63,7 +63,7 @@ def get_user_ig_business_account(facebook_page_id):
     return None
 
 
-@router.get("/comments")
+@router.get("/{post_url}/comments")
 def filter_media_by_permalink(user_ig_business_account_id: str, post_url: str):
     permalink = extract_permalink_from_url(post_url)
     print(permalink)

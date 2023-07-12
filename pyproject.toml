@@ -19,7 +19,6 @@ python-dotenv = "^1.0.0"
 twitterapi = "^2.8.2"
 pandas = "^2.0.2"
 tiktokapi = "^5.2.2"
-psycopg2 = "^2.9.6"
 tweepy = "^4.14.0"
 
 

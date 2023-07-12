@@ -5,10 +5,30 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres_admin
+      POSTGRES_PASSWORD: postgres_admin
+      POSTGRES_DB: isocial_app
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./var/lib/postgresql/data
     ports:
       - 5432:5432
+
+  app:
+    build:
+      context: .
+    container_name: isocial
+    restart: always
+    command: uvicorn main:app --reload --host 0.0.0.0
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./app
+
+
+networks:
+  default:
+      name: isocial

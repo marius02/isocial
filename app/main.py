@@ -4,6 +4,7 @@ from api.facebook.routes import router as facebook_router
 from api.instagram.routes import router as instagram_router
 from api.youtube.routes import router as youtube_router
 from api.twitter.routes import router as twitter_router
+from api.openai.routes import router as openai_router
 
 from db.models.users import User
 from db.base import create_db_and_tables
@@ -24,6 +25,7 @@ app.include_router(facebook_router)
 app.include_router(instagram_router)
 app.include_router(youtube_router)
 app.include_router(twitter_router)
+app.include_router(openai_router)
 app.include_router(
     fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
 )

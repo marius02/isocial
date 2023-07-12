@@ -17,7 +17,7 @@ router = APIRouter(prefix="/youtube", tags=["YouTube Google API"])
 API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 
-@router.get("/comments")
+@router.get("/{video_url}/comments")
 def get_comments(video_url):
 
     video_id = extract_video_id(video_url)

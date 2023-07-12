@@ -29,7 +29,7 @@ auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
 
-@router.get("/replies/{username}_{tweet_id}")
+@router.get("/{tweet_id}/replies")
 def get_twitter_tweet_replies(username: str, tweet_id: str):
     replies = []
     try:
@@ -45,16 +45,3 @@ def get_twitter_tweet_replies(username: str, tweet_id: str):
         print(f"Error: {err}")
 
     return replies
-
-
-@router.post("/replies")
-def create_reply(reply_data: TwitterReplyCreate, db: Session = Depends(get_db)):
-    twitter_service = TwitterService(db)
-    twitter_service.save_reply(reply_data.message)
-    return {"message": "Comment created successfully."}
-
-
-@router.get("/replies/{tweet_id}")
-def get_replies(db: Session = Depends(get_db)):
-    twitter_repo = TwitterRepository(db)
-    return twitter_repo.get_replies()
