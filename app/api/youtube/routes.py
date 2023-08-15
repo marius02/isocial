@@ -2,8 +2,9 @@ from fastapi import APIRouter
 from dotenv import load_dotenv
 import googleapiclient.discovery
 import os
-from api.youtube.utils.url_converter import extract_video_id
+from urllib.parse import urlparse
 
+import re
 
 load_dotenv()
 
@@ -17,10 +18,13 @@ router = APIRouter(prefix="/youtube", tags=["YouTube Google API"])
 API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 
-@router.get("/{video_url}/comments")
-def get_comments(video_url):
+@router.get("/comments")
+async def get_comments(video_url: str):
 
-    video_id = extract_video_id(video_url)
+    # Parse the URL
+    parsed_url = urlparse(video_url)
+
+    video_id = re.sub(r'^/', '', parsed_url.path)
 
     api_service_name = "youtube"
     api_version = "v3"
@@ -32,10 +36,12 @@ def get_comments(video_url):
 
     request = youtube.commentThreads().list(
         part="snippet,replies",
-        videoId=video_id
-    )
-    response = request.execute()
-    comments = response['items']
+        videoId=video_id,
+        maxResults=100
+    ).execute()
+    
+
+    comments = request['items']
 
     if comments:
         for comment in comments:

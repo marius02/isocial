@@ -1,7 +1,6 @@
-from fastapi import HTTPException
-from fastapi import APIRouter, Depends
+from fastapi import HTTPException, APIRouter, Depends, Request
 from sqlalchemy.orm import Session
-from db.base import get_db
+from db.db_config import get_user_db
 from api.facebook.models import (FacebookCommentCreate, FacebookPostCreate,
                                  FacebookPost, FacebookComment)
 from api.facebook.utils.url_converter import convert_facebook_url
@@ -11,22 +10,21 @@ from dotenv import load_dotenv
 import os
 import requests
 
-
 load_dotenv()
-
 
 router = APIRouter(prefix="/facebook", tags=["Facebook Graph API"])
 
-
-ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_PAGE_TOKEN")
+APP_ID = os.getenv("APP_ID")
+APP_SECRET = os.getenv("APP_SECRET")
 
 
 @router.get("/{post_url}/comments")
-def get_facebook_post_comments(post_url: str):
+def get_facebook_post_comments(post_url: str, request: Request):
+    page_access_token = request.session.get("FACEBOOK_PAGE_ACCESS_TOKEN")
     post_id = convert_facebook_url(post_url)
     api_endpoint = f'https://graph.facebook.com/v17.0/{post_id}'
     params = {
-        'access_token': ACCESS_TOKEN,
+        'access_token': page_access_token,
         'fields': 'comments{message,comments{message}}'
     }
     try:
@@ -46,8 +44,52 @@ def get_facebook_post_comments(post_url: str):
     return []
 
 
+@router.post("/get-user-token")
+def get_long_lived_user_token(short_lived_user_token, request: Request):
+    url = f"https://graph.facebook.com/oauth/access_token"
+    params = {
+        "grant_type": "fb_exchange_token",
+        "client_id": APP_ID,
+        "client_secret": APP_SECRET,
+        "fb_exchange_token": short_lived_user_token,
+    }
+
+    response = requests.get(url, params=params)
+    response_data = response.json()
+
+    if "access_token" in response_data:
+        long_lived_user_token = response_data["access_token"]
+        # Set the access tokens as environment variables
+        request.session["FACEBOOK_LONG_LIVED_USER_ACCESS_TOKEN"] = long_lived_user_token
+        return "Long-lived user access token set up successfully"
+    else:
+        return ValueError("Unable to get long-lived user token")
+
+
+@router.post("/get-page-token")
+def get_page_token(page_id, request: Request):
+    long_lived_user_token = request.session.get(
+        "FACEBOOK_LONG_LIVED_USER_ACCESS_TOKEN")
+    url = f"https://graph.facebook.com/{page_id}"
+    params = {
+        "fields": "access_token",
+        "access_token": long_lived_user_token,
+    }
+
+    response = requests.get(url, params=params)
+    response_data = response.json()
+
+    if "access_token" in response_data:
+        page_token = response_data["access_token"]
+        request.session["FACEBOOK_PAGE_ACCESS_TOKEN"] = page_token
+        return "Page access token set up successfully"
+    else:
+        raise ValueError(
+            "Unable to get page token. Check if you set up long-lived user access token")
+
+
 @router.post("/{post_url}/comments")
-def save_facebook_post_comments(post_url: str, db: Session = Depends(get_db)):
+def save_facebook_post_comments(post_url: str, db: Session = Depends(get_user_db)):
     post_id = convert_facebook_url(post_url)
 
     try:

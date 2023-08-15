@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from api.twitter.services import TwitterService
 from sqlalchemy.orm import Session
-from db.base import get_db
+from db.db_config import get_user_db
 from api.twitter.models import TwitterReplyCreate
 from db.repositories.twitter_repository import TwitterRepository
 import tweepy

@@ -2,33 +2,45 @@ version: '3.9'
 
 services:
   db:
-    image: postgres
+    image: postgres:latest
+    container_name: isocial_db
     restart: always
     environment:
-      POSTGRES_USER: postgres_admin
-      POSTGRES_PASSWORD: postgres_admin
-      POSTGRES_DB: isocial_app
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data/
     ports:
-      - 5432:5432
+      - "5432:5432"
 
   app:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: isocial
     restart: always
-    command: uvicorn main:app --reload --host 0.0.0.0
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
-      - 8000:8000
+      - "8000:8000"
+    environment:
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+      FACEBOOK_ACCESS_PAGE_TOKEN: ${FACEBOOK_ACCESS_PAGE_TOKEN}
+      FACEBOOK_ACCESS_USER_TOKEN: ${FACEBOOK_ACCESS_USER_TOKEN}
+      TIKTOK_CLIENT_KEY: ${TIKTOK_CLIENT_KEY}
+      TIKTOK_CLIENT_SECRET: ${TIKTOK_CLIENT_SECRET}
+      CONSUMER_KEY: ${CONSUMER_KEY}
+      CONSUMER_SECRET: ${CONSUMER_SECRET}
+      ACCESS_TOKEN: ${ACCESS_TOKEN}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      USER_ISOCIAL_SECRET: ${USER_ISOCIAL_SECRET}
+      OPENAI_TOKEN: ${OPENAI_TOKEN}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - db
     env_file:
       - .env
-    volumes:
-      - ./app
 
-
-networks:
-  default:
-      name: isocial
+volumes:
+  pg_data:

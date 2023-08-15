@@ -2,36 +2,26 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 import openai
 import os
-import requests
 
 load_dotenv()
-
-openai.api_key = os.getenv('OPENAI_TOKEN')
 
 
 class OpenAIService:
     def __init__(self):
-        pass
+        openai.api_key = os.getenv('OPENAI_TOKEN')
 
-    def summarize_comments(self, platform: str, comments: list):
-        platforms_objects = {
-            'youtube': 'video',
-            'twitter': 'tweet',
-            'facebook': 'post',
-            'instagram': 'post',
-            'tiktok': 'video'
-        }
-
-        if platform.lower() not in platforms_objects:
-            raise HTTPException(status_code=400, detail="Invalid Platform")
+    def get_completion(self, comments: list[str], prompt: str):
+        messages = [
+            {
+                "role": "user",
+                "content": f"""The following are users comments about the content with each comment separated by a ;.
+                                {prompt[:4000]}
+                                Comments: {';'.join(comments)}
+                """
+            }
+        ]
 
         try:
-            prompt = f"""The following are users comments of a {platform} {platforms_objects[platform.lower()]}, with each comment separated by a ;. 
-                        Provide a summary of what users think about the {platforms_objects[platform.lower()]}.
-
-                        Comments: {';'.join(comments)}
-                        """
-            messages = [{"role": "user", "content": prompt[:12000]}]
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages,

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, URL
 from sqlalchemy.orm import relationship
 
-from db.base import Base
+from db.db_config import Base
 
 
 class FacebookComment(Base):

@@ -14,7 +14,7 @@ import uuid
 
 from api.users.services import UserManager
 from db.models.users import User
-from db.base import get_user_db
+from db.db_config import get_user_db
 
 load_dotenv()
 
