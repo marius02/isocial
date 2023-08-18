@@ -5,6 +5,7 @@ from api.instagram.routes import router as instagram_router
 from api.youtube.routes import router as youtube_router
 from api.twitter.routes import router as twitter_router
 from api.openai.routes import router as openai_router
+from api.chat.routers import router as chat_router
 
 from fastapi import HTTPException, Depends, status
 from fastapi_users import models
@@ -24,6 +25,7 @@ from api.users.services import auth_backend, current_active_user, fastapi_users
 app = FastAPI(title='iSocial')
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 
+app.include_router(chat_router)
 app.include_router(facebook_router)
 app.include_router(instagram_router)
 app.include_router(youtube_router)

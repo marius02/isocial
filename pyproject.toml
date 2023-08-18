@@ -19,6 +19,7 @@ twitterapi = "^2.8.2"
 pandas = "^2.0.2"
 tiktokapi = "^5.2.2"
 tweepy = "^4.14.0"
+tiktoken = "^0.4.0"
 
 
 [build-system]

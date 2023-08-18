@@ -1,34 +1,17 @@
-from pydantic import BaseModel, HttpUrl
-from typing import List
+from pydantic import BaseModel
 
 
-class FacebookCommentBase(BaseModel):
+class FacebookCommentCreate(BaseModel):
+    url: str
     text: str
-
-
-class FacebookCommentCreate(FacebookCommentBase):
-    pass
-
-
-class FacebookComment(FacebookCommentBase):
-    id: int
-
+    
     class Config:
         orm_mode = True
 
 
-class FacebookPostBase(BaseModel):
-    post_url: HttpUrl
-    post_text: str
-
-
-class FacebookPostCreate(FacebookPostBase):
-    pass
-
-
-class FacebookPost(FacebookPostBase):
-    id: int
-    comments: List[FacebookComment] = []
-
+class FacebookCommentResponse(FacebookCommentCreate):
+    question: str = None
+    answer: str = None
+    
     class Config:
         orm_mode = True

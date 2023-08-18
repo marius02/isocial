@@ -11,12 +11,13 @@ class OpenAIService:
         openai.api_key = os.getenv('OPENAI_TOKEN')
 
     def get_completion(self, comments: list[str], prompt: str):
+        text = ';'.join(comments)
         messages = [
             {
                 "role": "user",
                 "content": f"""The following are users comments about the content with each comment separated by a ;.
-                                {prompt[:4000]}
-                                Comments: {';'.join(comments)}
+                                {prompt[:2000]}
+                                Comments: {text[:2097]}
                 """
             }
         ]
