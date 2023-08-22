@@ -1,10 +1,11 @@
+import uuid
 from pydantic import BaseModel
 
 
 class YouTubeCommentCreate(BaseModel):
     url: str
     text: str
-    chat: str
+    chat_id: uuid.UUID
 
 
 class YouTubeCommentResponse(BaseModel):

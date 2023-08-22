@@ -1,14 +1,16 @@
+import uuid
 from fastapi import APIRouter, Depends
 from dotenv import load_dotenv
 from db.db_config import get_async_session
 from db.models.youtube import YouTubeComment
 from api.youtube.models import YouTubeCommentCreate, YouTubeCommentResponse
+from api.users.services import current_active_user
 import googleapiclient.discovery
-import os
 from db.repositories.youtube_repository import YouTubeRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from urllib.parse import urlparse
+import os
 import re
 
 load_dotenv()
@@ -61,15 +63,18 @@ async def get_comments(video_url: str):
 
 
 @router.post("/comments/")
-async def save_comment(comment: YouTubeCommentCreate, db: AsyncSession = Depends(get_async_session)):
+async def save_comment(comment: YouTubeCommentCreate, chat_id, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session)):
     youtube_repo = YouTubeRepository(db)
-    return await youtube_repo.create_comment(comment)
+    return await youtube_repo.create_comment(comment, chat_id)
 
 
-@router.get("/comments/{chatid}", response_model=YouTubeCommentResponse)
-async def get_comments_by_chatid(chatid: str, db: AsyncSession = Depends(get_async_session)):
-    async with db.begin():
-        query = select(YouTubeComment).where(YouTubeComment.chat_id == chatid)
-        db_comment = await db.execute(query)
+@router.get("/comments/{chat_id}")
+async def get_comments_by_chat_id(chat_id: uuid.UUID, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session)):
+    youtube_repo = YouTubeRepository(db)
+    return await youtube_repo.get_comments_by_chat_id(user.id, chat_id)
 
-        return db_comment.scalar_one()
+
+@router.get("/comments/{comment_id}")
+async def get_comment(comment_id: uuid.UUID, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session)):
+    youtube_repo = YouTubeRepository(db)
+    return await youtube_repo.get_comment(user.id, comment_id)

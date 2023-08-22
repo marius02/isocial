@@ -5,7 +5,7 @@ from api.instagram.routes import router as instagram_router
 from api.youtube.routes import router as youtube_router
 from api.twitter.routes import router as twitter_router
 from api.openai.routes import router as openai_router
-from api.chat.routers import router as chat_router
+from api.chat.routes import router as chat_router
 
 from fastapi import HTTPException, Depends, status
 from fastapi_users import models

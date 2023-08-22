@@ -6,7 +6,8 @@ import os
 from fastapi import Depends
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, relationship
+
 
 load_dotenv()
 
@@ -18,8 +19,9 @@ class Base(DeclarativeBase):
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
-    __tablename__ = "users2"
-    pass
+    __tablename__ = "users"
+
+    chats = relationship("Chat", back_populates="user")
 
 
 engine = create_async_engine(DATABASE_URL)
