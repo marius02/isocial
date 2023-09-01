@@ -40,7 +40,7 @@ services:
     env_file:
       - .env
     volumes:
-      - $PWD:/app
+      - $PWD/:/app
 
 volumes:
   isocial_pg_data:
