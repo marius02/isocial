@@ -43,4 +43,4 @@ services:
       - $PWD:/app
 
 volumes:
-  pg_data:
+  isocial_pg_data:
