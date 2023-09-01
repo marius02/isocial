@@ -11,8 +11,6 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-
 
 class Base(DeclarativeBase):
     pass
@@ -21,10 +19,10 @@ class Base(DeclarativeBase):
 class User(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "users"
 
-    chats = relationship("Chat", back_populates="user")
+    all_chats = relationship("Chat", back_populates="user")
 
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(os.getenv('DATABASE_URL'))
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 

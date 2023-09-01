@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from db.db_config import get_async_session
 from api.facebook.models import FacebookCommentCreate, FacebookCommentResponse
 from api.facebook.utils.url_converter import convert_facebook_url
-from db.repositories.facebook_repository import FacebookRepository
-from api.facebook.services import FacebookService
 from dotenv import load_dotenv
 import os
 import requests

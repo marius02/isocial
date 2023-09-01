@@ -10,14 +10,13 @@ class OpenAIService:
     def __init__(self):
         openai.api_key = os.getenv('OPENAI_TOKEN')
 
-    def get_completion(self, comments: list[str], prompt: str):
-        text = ';'.join(comments)
+    def get_completion(self, comments: str, prompt: str):
         messages = [
             {
                 "role": "user",
                 "content": f"""The following are users comments about the content with each comment separated by a ;.
                                 {prompt[:2000]}
-                                Comments: {text[:2097]}
+                                Comments: {comments[:2000]}
                 """
             }
         ]
@@ -26,8 +25,7 @@ class OpenAIService:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
-                temperature=0,
-                max_tokens=800
+                temperature=0
             )
             return response.choices[0].message["content"]
 
