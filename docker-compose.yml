@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pg_data:/var/lib/postgresql/data/
+      - isocial_pg_data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
 
