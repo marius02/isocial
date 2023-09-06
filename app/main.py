@@ -11,10 +11,23 @@ from api.users.utils.auth import auth_backend
 from db.db_config import User, create_db_and_tables
 from api.users.schemas import UserCreate, UserRead, UserUpdate
 from api.users.services import auth_backend, fastapi_users
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost",
+    "http://localhost:8100",
+]
 
 
 app = FastAPI(title='iSocial')
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(chat_router)
 app.include_router(
