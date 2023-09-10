@@ -24,7 +24,7 @@ origins = os.getenv('CORS_ORIGIN')
 methods = ['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT']
 
 # Only these headers are allowed
-headers = ["Content-Type", "Authorization"]
+headers = ["Content-Type", "Authorization", "'Access-Control-Allow-Origin'"]
 
 
 app = FastAPI(title='iSocial')
