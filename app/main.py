@@ -13,10 +13,12 @@ from api.users.schemas import UserCreate, UserRead, UserUpdate
 from api.users.services import auth_backend, fastapi_users
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = [
-    "http://localhost",
-    "http://localhost:8100",
-]
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+origins = os.getenv('CORS_ORIGIN')
 
 
 app = FastAPI(title='iSocial')
