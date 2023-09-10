@@ -13,18 +13,16 @@ from api.users.schemas import UserCreate, UserRead, UserUpdate
 from api.users.services import auth_backend, fastapi_users
 from fastapi.middleware.cors import CORSMiddleware
 
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-origins = os.getenv('CORS_ORIGIN')
+origins = [
+    'http://23.100.16.133',
+    'http://23.100.16.133:8000'
+]
 
 # Allow these methods to be used
 methods = ['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT']
 
 # Only these headers are allowed
-headers = ["Content-Type", "Authorization", "'Access-Control-Allow-Origin'"]
+headers = ["Content-Type", "Authorization", "Access-Control-Allow-Origin"]
 
 
 app = FastAPI(title='iSocial')
