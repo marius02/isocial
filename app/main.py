@@ -20,6 +20,12 @@ load_dotenv()
 
 origins = os.getenv('CORS_ORIGIN')
 
+# Allow these methods to be used
+methods = ['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT']
+
+# Only these headers are allowed
+headers = ["Content-Type", "Authorization"]
+
 
 app = FastAPI(title='iSocial')
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
@@ -27,9 +33,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT'],
-    allow_headers=['Content-Type', 'Set-Cookie', 'Access-Control-Allow-Headers',
-                   'Access-Control-Allow-Origin', 'Authorization'],
+    allow_methods=methods,
+    allow_headers=headers
 )
 
 app.include_router(chat_router)
