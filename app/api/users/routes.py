@@ -13,7 +13,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication and authorization"])
 
 @router.post('/changepassword/')
 async def password_change(pass_change: AuthPassChange, user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager)):
-    # user_db = get_user_db(get_async_session())
+
     auth = Auth(username=pass_change.email, password=pass_change.password)
 
     valid_user = await user_manager.authenticate(auth)

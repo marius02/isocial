@@ -15,8 +15,8 @@ class OpenAIService:
             {
                 "role": "user",
                 "content": f"""The following are users comments about the content with each comment separated by a ;.
-                                {prompt[:2000]}
-                                Comments: {comments[:2000]}
+                                {prompt}
+                                Comments: {comments}
                 """
             }
         ]

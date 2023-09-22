@@ -17,7 +17,6 @@ class Response(Base):
 
     question = Column(Text, nullable=True)
     response = Column(Text, nullable=True)
-
     date = Column(DateTime, server_default=func.now())
     tokens = Column(Integer, nullable=True)
     rating = Column(Integer, nullable=True)

@@ -2,6 +2,8 @@ from fastapi import FastAPI
 
 from api.chat.routes import router as chat_router
 from api.users.routes import router as user_router
+from api.notifications.routes import router as notification_router
+from api.payments.routes import router as payment_router
 
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -60,6 +62,12 @@ app.include_router(
     prefix="/users",
     tags=["Users"],
 )
+app.include_router(notification_router,
+                   prefix="/auth",
+                   tags=["Authentication and authorization"],)
+app.include_router(payment_router,
+                   prefix="/auth",
+                   tags=["Authentication and authorization"],)
 
 
 @app.on_event("startup")
