@@ -15,6 +15,17 @@ class NotificationRepositoryAsync:
         return notification
 
     async def get_notifications_by_user_id(self, user_id: str):
-        stmt = select(Notification).where(Notification.user_id == user_id)
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
+        stmt = select(Notification).where(
+            (Notification.user_id == user_id) & (Notification.read == False)
+        )
+        unread_notifications = await self.db.execute(stmt)
+        notifications = unread_notifications.scalars().all()
+
+        # Now that you have the unread notifications, mark them as read
+        for notification in notifications:
+            notification.read = True
+
+        # Commit the changes to the database
+        await self.db.commit()
+
+        return notifications

@@ -10,7 +10,7 @@ class OpenAIService:
     def __init__(self):
         openai.api_key = os.getenv('OPENAI_TOKEN')
 
-    def get_completion(self, comments: str, prompt: str):
+    async def get_completion(self, comments: str, prompt: str):
         messages = [
             {
                 "role": "user",
@@ -22,7 +22,7 @@ class OpenAIService:
         ]
 
         try:
-            response = openai.ChatCompletion.create(
+            response = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 messages=messages,
                 temperature=0

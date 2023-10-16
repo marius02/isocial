@@ -25,3 +25,8 @@ class AuthPassChange(BaseModel):
 class Auth(BaseModel):
     username: str
     password: str
+
+
+class Question(BaseModel):
+    question_id: str
+    text: str

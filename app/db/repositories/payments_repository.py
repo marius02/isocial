@@ -3,15 +3,16 @@ from db.models.credit import Credit
 from db.models.subscription import Subscription, UserSubscription
 from sqlalchemy.future import select
 from fastapi import HTTPException
+from datetime import datetime
 
 
 class PaymentRepositoryAsync:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def add_credit(self, user_id: str, amount: str, success: str, stripe_code: str):
+    async def add_credit(self, user_id: str, amount: str, success: str, stripe_code: str, date: datetime):
         credit = Credit(user_id=user_id, amount=amount,
-                        success=success, stripe_code=stripe_code)
+                        success=success, date=date, stripe_code=stripe_code)
         self.db.add(credit)
         await self.db.commit()
         await self.db.refresh(credit)

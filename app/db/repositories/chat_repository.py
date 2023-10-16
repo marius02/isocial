@@ -1,8 +1,10 @@
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy import desc
 from db.models.chat import Chat
 from db.models.responses import Response
 from db.repositories.payments_repository import SubscriptionRepository
@@ -38,6 +40,9 @@ class ChatRepository:
         youtube_service = YouTubeAPIService()
         comments = youtube_service.get_comments(chat_data.url)
 
+        if isinstance(comments, dict):
+            return JSONResponse(content=comments, status_code=400)
+
         decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(comments,
                                                                                   chat_data.question)
 
@@ -53,11 +58,11 @@ class ChatRepository:
 
             if chat_data.question:
                 openai_service = OpenAIService()
-                gpt_response = openai_service.get_completion(
-                    comments, decoded_question)
+                gpt_response = await openai_service.get_completion(
+                    decoded_comments, decoded_question)
 
                 new_response = Response(
-                    question=decoded_question, response=gpt_response, chat_id=new_chat.id)
+                    question=decoded_question, response=gpt_response, tokens=total_chat_tokens, chat_id=new_chat.id)
 
             try:
                 self.db.add(new_chat)
@@ -82,14 +87,21 @@ class ChatRepository:
                         status_code=500, detail="An error occurred while creating the chat")
 
         else:
-            return {"message": "User does not have sufficient tokens to create a chat"}
+            raise HTTPException(
+                status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                         "reason": "Not enough balance, please purchase more tokens"}
+            )
 
     async def continue_chat(self, user_id: uuid.UUID, chat_data: dict):
         stmt = select(Chat).where(
-            (Chat.id == chat_data.chat_id) & (Chat.user_id == user_id))
+            (Chat.id == chat_data.chat_id) & (Chat.user_id == user_id) & (Chat.delete == "N"))
         result = await self.db.execute(stmt)
 
         chat = result.scalar()
+
+        if not chat:
+            raise HTTPException(
+                status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found")
 
         decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(chat.commentblob,
                                                                                   chat_data.question)
@@ -99,38 +111,38 @@ class ChatRepository:
         balance = await subscription_repo.get_user_balance(user_id)
 
         if balance >= total_chat_tokens:
-            if chat:
-                openai_service = OpenAIService()
-                gpt_response = openai_service.get_completion(
-                    decoded_comments, decoded_question)
+            openai_service = OpenAIService()
+            gpt_response = await openai_service.get_completion(
+                decoded_comments, decoded_question)
 
-                new_response = Response(question=decoded_question,
-                                        response=gpt_response,
-                                        chat_id=chat_data.chat_id)
-                try:
-                    self.db.add(new_response)
+            new_response = Response(question=decoded_question,
+                                    response=gpt_response,
+                                    tokens=total_chat_tokens,
+                                    chat_id=chat_data.chat_id)
+            try:
+                self.db.add(new_response)
 
-                    await self.db.commit()
-                    await self.db.refresh(new_response)
+                await self.db.commit()
+                await self.db.refresh(new_response)
 
-                    # deduct from user token balance
-                    subscription = await subscription_repo.decrease_user_balance(user_id, total_chat_tokens)
+                # deduct from user token balance
+                subscription = await subscription_repo.decrease_user_balance(user_id, total_chat_tokens)
 
-                    return new_response
+                return new_response
 
-                except IntegrityError as e:
-                    if "duplicate key value violates unique constraint" in str(e):
-                        raise HTTPException(
-                            status_code=400, detail="Chat with this ID already exists")
-                    else:
-                        raise HTTPException(
-                            status_code=500, detail="An error occurred while creating the chat")
-            else:
-                raise HTTPException(
-                    status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found")
+            except IntegrityError as e:
+                if "duplicate key value violates unique constraint" in str(e):
+                    raise HTTPException(
+                        status_code=400, detail="Chat with this ID already exists")
+                else:
+                    raise HTTPException(
+                        status_code=500, detail="An error occurred while creating the chat")
 
         else:
-            return {"message": "User does not have sufficient tokens to create a chat"}
+            raise HTTPException(
+                status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                         "reason": "Not enough balance, please purchase more tokens"}
+            )
 
     async def delete_chat(self, user_id: uuid.UUID, chat_id: uuid.UUID):
         stmt = select(Chat).where(
@@ -140,17 +152,16 @@ class ChatRepository:
         chat = result.scalar()
 
         if chat:
-            await self.db.delete(chat)
+            chat.delete = "Y"
             await self.db.commit()
-            return {"message": f"Chat with id:{chat_id} has successfully deleted"}
+            return {"detail": {"code": "DELETE_SUCCESSFUL", "reason": "Chat deleted"}}
         else:
             raise HTTPException(
-                status_code=404, detail=f"Chat with id:{chat_id} not found")
+                status_code=404, detail=f"Chat not found")
 
     async def get_chat(self, user_id: uuid.UUID, chat_id: uuid.UUID):
         stmt = select(Chat).where(
-            (Chat.id == chat_id) & (Chat.user_id == user_id)
-        ).options(selectinload(Chat.chats))
+            (Chat.id == chat_id) & (Chat.user_id == user_id) & (Chat.delete == "N")).options(selectinload(Chat.chats))
         result = await self.db.execute(stmt)
         chat = result.scalar()
 
@@ -161,7 +172,9 @@ class ChatRepository:
                 status_code=404, detail=f"Chat with id:{chat_id} not found")
 
     async def get_user_chats(self, user_id):
-        stmt = select(Chat).where(Chat.user_id == user_id)
+        stmt = select(Chat).where(
+            (Chat.user_id == user_id) & (Chat.delete == "N")
+        ).order_by(desc(Chat.created_at))
         result = await self.db.execute(stmt)
         chats = result.scalars().all()
 

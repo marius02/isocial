@@ -6,7 +6,6 @@ from db.db_config import get_async_session
 from db.repositories.notifications_repository import NotificationRepositoryAsync
 from db.repositories.payments_repository import PaymentRepositoryAsync, SubscriptionRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-import datetime
 
 
 router = APIRouter()
@@ -33,8 +32,6 @@ async def add_credit(request_data: AddCreditRequest,
     subscription_repo = SubscriptionRepository(db)
     subscription = await subscription_repo.increase_user_balance(user.id, amount=request_data.amount)
 
-    date_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
-
     # Initialize the PaymentRepositoryAsync with the database session
     payment_repo = PaymentRepositoryAsync(db)
 
@@ -42,6 +39,7 @@ async def add_credit(request_data: AddCreditRequest,
     await payment_repo.add_credit(
         user_id=user.id,
         amount=request_data.amount,
+        date=request_data.datetime_now,
         success=request_data.success,
         stripe_code=request_data.stripe_code,
     )
@@ -53,7 +51,7 @@ async def add_credit(request_data: AddCreditRequest,
     tokens_bought = await subscription_repo.map_subscription_with_amount(amount=request_data.amount)
     await notification_repo.create_notification(
         user_id=user.id,
-        text=f"You purchased {tokens_bought.tokens} tokens on {date_time} with USD{request_data.amount} payment"
+        text=f"You purchased {tokens_bought.tokens} tokens on {request_data.datetime_now.strftime('%Y-%m-%d %H:%M')} with USD{request_data.amount} payment"
     )
 
     return {

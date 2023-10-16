@@ -1,6 +1,7 @@
 import uuid
 from db.db_config import Base
-from sqlalchemy import Column, ForeignKey, String, Text
+from sqlalchemy import Column, ForeignKey, String, Text, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -18,6 +19,10 @@ class Chat(Base):
     url = Column(String)
 
     commentblob = Column(Text, nullable=True)
+
+    delete = Column(String, default='N')
+
+    created_at = Column(DateTime, server_default=func.now())
 
     chats = relationship(
         "Response",
