@@ -8,12 +8,12 @@ from api.payments.routes import router as payment_router
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.users.schemas import UserCreate, UserRead, UserUpdate
-from api.users.utils.auth import auth_backend
 
 from db.db_config import User, create_db_and_tables
 from api.users.schemas import UserCreate, UserRead, UserUpdate
 from api.users.services import auth_backend, fastapi_users
 from fastapi.middleware.cors import CORSMiddleware
+
 
 origins = [
     'http://23.100.16.133',
@@ -38,30 +38,22 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
-app.include_router(
-    fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["Authentication and authorization"]
-)
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["Authentication and authorization"],
-)
-app.include_router(
-    fastapi_users.get_reset_password_router(),
-    prefix="/auth",
-    tags=["Authentication and authorization"],
-)
-app.include_router(
-    fastapi_users.get_verify_router(UserRead),
-    prefix="/auth",
-    tags=["Authentication and authorization"],
-)
+app.include_router(fastapi_users.get_auth_router(auth_backend,
+                                                 requires_verification=True),
+                   prefix="/auth/jwt", tags=["Authentication and authorization  "])
+app.include_router(fastapi_users.get_register_router(UserRead, UserCreate),
+                   prefix="/auth",
+                   tags=["Authentication and authorization"])
+app.include_router(fastapi_users.get_reset_password_router(),
+                   prefix="/auth",
+                   tags=["Authentication and authorization"])
+app.include_router(fastapi_users.get_verify_router(UserRead),
+                   prefix="/auth",
+                   tags=["Authentication and authorization"])
 app.include_router(user_router)
-app.include_router(
-    fastapi_users.get_users_router(UserRead, UserUpdate),
-    prefix="/users",
-    tags=["Users"],
-)
+app.include_router(fastapi_users.get_users_router(UserRead, UserUpdate),
+                   prefix="/users",
+                   tags=["Users"])
 app.include_router(notification_router,
                    prefix="/auth",
                    tags=["Authentication and authorization"],)

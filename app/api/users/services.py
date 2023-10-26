@@ -7,12 +7,11 @@ from fastapi_users import (BaseUserManager,
                            exceptions,
                            UUIDIDMixin,
                            )
-
 from fastapi_users.db import SQLAlchemyUserDatabase
 from db.db_config import User, get_user_db
 
 from fastapi import Depends, Request
-from api.users.utils.email import send_welcome_email, send_forgot_email
+from api.users.utils.email import send_welcome_email
 from db.models.users import User
 import uuid
 import os
@@ -22,11 +21,6 @@ from fastapi_users.authentication import (
     BearerTransport,
     JWTStrategy,
 )
-
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 
 load_dotenv()
@@ -40,11 +34,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} has registered.")
+        await self.request_verify(user, request)
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-
         send_forgot_email(user.email, token)
         request.status = 200
         request.body = {"Description": "Email Sent"}
@@ -52,7 +46,6 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-        print("In welcome email")
         send_welcome_email(user.email, token)
         request.status = 200
         request.body = {"Description": "Email Sent"}
@@ -73,8 +66,6 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
                 reason="Password does not meet minimum criteria "
             )
 
-        # re.match(password_pattern, '-Secr3t.') # Returns Match object
-
     async def reset_password_user(
         self, user, password: str, request: Optional[Request] = None
     ):
@@ -92,72 +83,72 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         return updated_user
 
 
-def send_welcome_email(email: str, token: str):
-    sender_email = "latentvariable.z@gmail.com"
-    receiver_email = email
+# def send_welcome_email(email: str, token: str):
+#     sender_email = "support@isocial.ai"
+#     receiver_email = email
 
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Welcome to iSocial!"
-    message["From"] = sender_email
-    message["To"] = receiver_email
+#     message = MIMEMultipart("alternative")
+#     message["Subject"] = "Welcome to iSocial!"
+#     message["From"] = sender_email
+#     message["To"] = receiver_email
 
-    #address = "http://159.203.54.13:8787/auth/verify"
+#     address = "http://159.203.54.13:8787/auth/verify"
 
-    html = f"""\
-    <html>
-    <body>
-        <p>Hi,<br>
-            Welcome to iSocial
-            Click <a href="http://143.198.40.50/auth/verify2/{token}">Here</a> to verify
-    </p>
-    </body>
-    </html>
-    """
+#     html = f"""\
+#     <html>
+#     <body>
+#         <p>Hi,<br>
+#             Welcome to iSocial
+#             Click <a href="http://143.198.40.50/auth/verify2/{token}">Here</a> to verify
+#     </p>
+#     </body>
+#     </html>
+#     """
 
-    part2 = MIMEText(html, 'html')
+#     part2 = MIMEText(html, 'html')
 
-    message.attach(part2)
+#     message.attach(part2)
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        server.login(sender_email, "nuxpqnxljidxwfyr")
-        server.sendmail(
-            sender_email, receiver_email, message.as_string()
-        )
+#     context = ssl.create_default_context()
+#     with smtplib.SMTP_SSL("mail.privateemail.com", 465, context=context) as server:
+#         server.login(sender_email, "Isocialsupport@1234")
+#         server.sendmail(
+#             sender_email, receiver_email, message.as_string()
+#         )
 
 
-def send_forgot_email(email: str, token: str):
-    sender_email = "latentvariable.z@gmail.com"
-    receiver_email = email
+# def send_forgot_email(email: str, token: str):
+#     sender_email = "support@isocial.ai"
+#     receiver_email = email
 
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Welcome to iSocial!"
-    message["From"] = sender_email
-    message["To"] = receiver_email
+#     message = MIMEMultipart("alternative")
+#     message["Subject"] = "Welcome to iSocial!"
+#     message["From"] = sender_email
+#     message["To"] = receiver_email
 
-    address = "http://159.203.54.13:8787/auth/verify"
+#     address = "http://159.203.54.13:8787/auth/verify"
 
-    html = f"""\
-    <html>
-    <body>
-        <p>Hi,<br>
-            iSocial forgot password 
-            Click <a href="http://143.198.40.50/auth/verify2/{token}">Here</a> to reset your password 
-    </p>
-    </body>
-    </html>
-    """
+#     html = f"""\
+#     <html>
+#     <body>
+#         <p>Hi,<br>
+#             iSocial forgot password
+#             Click <a href="http://143.198.40.50/auth/verify2/{token}">Here</a> to reset your password
+#     </p>
+#     </body>
+#     </html>
+#     """
 
-    part2 = MIMEText(html, 'html')
+#     part2 = MIMEText(html, 'html')
 
-    message.attach(part2)
+#     message.attach(part2)
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        server.login(sender_email, "nuxpqnxljidxwfyr")
-        server.sendmail(
-            sender_email, receiver_email, message.as_string()
-        )
+#     context = ssl.create_default_context()
+#     with smtplib.SMTP_SSL("mail.privateemail.com", 465, context=context) as server:
+#         server.login(sender_email, "Isocialsupport@1234")
+#         server.sendmail(
+#             sender_email, receiver_email, message.as_string()
+#         )
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
@@ -178,5 +169,6 @@ auth_backend = AuthenticationBackend(
 )
 
 fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
+
 
 current_active_user = fastapi_users.current_user(active=True)

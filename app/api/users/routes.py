@@ -28,6 +28,12 @@ async def password_change(pass_change: AuthPassChange, user_manager: BaseUserMan
     return {"message": f"Password updated successfully "}
 
 
+@router.get("/email-verification")
+async def email_verificatrion(token, user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager)):
+    result = await user_manager.verify(token=token)
+    return result.is_verified
+
+
 @router.get("/authenticated-route")
 async def authenticated_route(user: User = Depends(current_active_user)):
     return {"message": f"Hello {user.email}!"}
