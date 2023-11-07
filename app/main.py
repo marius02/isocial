@@ -24,7 +24,7 @@ origins = [
 methods = ['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT']
 
 # Only these headers are allowed
-headers = ["Content-Type", "Authorization", "Access-Control-Allow-Origin"]
+headers = ["Content-Type", "Accept", "Authorization"]
 
 
 app = FastAPI(title='iSocial')
