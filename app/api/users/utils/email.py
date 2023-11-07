@@ -16,7 +16,7 @@ def send_welcome_email(email, token):
                     <body>
                         <p>Hi,<br>
                             Welcome to iSocial! Click the following link to verify your email address:
-                            <a href="http://0.0.0.0:8000/auth/email-verification/?token={token}">Verify Email</a> 
+                            <a href="http://23.100.16.133:8000/auth/email-verification/?token={token}">Verify Email</a> 
                         </p>
                     </body>
                     </html>
