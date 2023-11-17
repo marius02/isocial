@@ -21,11 +21,12 @@ class NotificationRepositoryAsync:
         unread_notifications = await self.db.execute(stmt)
         notifications = unread_notifications.scalars().all()
 
-        # Now that you have the unread notifications, mark them as read
-        for notification in notifications:
-            notification.read = True
+        # UNCOMMENT THE BELOW CODE IF YOU NEED THE NOTIFICATIONS MARKED AS 'READ' AUTOMATICALLY
+        # # Now that you have the unread notifications, mark them as read
+        # for notification in notifications:
+        #     notification.read = True
 
-        # Commit the changes to the database
-        await self.db.commit()
+        # # Commit the changes to the database
+        # await self.db.commit()
 
         return notifications
