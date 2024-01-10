@@ -18,15 +18,13 @@ services:
       context: .
     container_name: isocial
     restart: always
-    command: /bin/sh -c "cd app && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: /bin/sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
     depends_on:
       - db
     env_file:
       - .env
-    volumes:
-      - $PWD/:/app
 
 volumes:
   isocial_pg_data:
