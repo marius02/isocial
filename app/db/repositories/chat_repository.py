@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+from httpx import stream
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
@@ -9,8 +10,8 @@ from db.models.chat import Chat
 from db.models.responses import Response
 from db.repositories.payments_repository import SubscriptionRepository
 from api.youtube.services import YouTubeAPIService
-from api.openai.services import OpenAIService
 import uuid
+import openai
 
 
 class ChatRepository:
@@ -36,12 +37,36 @@ class ChatRepository:
 
         return comments[:2000], question[:2000], total_chat_tokens
 
-    async def create_chat(self, user_id: uuid.UUID, chat_data: dict):
+    async def openai_get_completion(self, client: openai.AsyncClient, comments: str, prompt: str):
+        messages = [
+            {
+                "role": "user",
+                "content": f"""The following are users comments about the content with each comment separated by a ;.
+                                {prompt}
+                                Comments: {comments}
+                """
+            }
+        ]
+
+        try:
+            response = await client.chat.completions.create(
+                model="gpt-3.5-turbo-1106",
+                messages=messages,
+                temperature=0,
+                stream=True,
+            )
+            return response
+
+        except openai.OpenAIError as e:
+            raise HTTPException(
+                status_code=500, detail=f"OpenAI Error: {str(e)}")
+
+    async def create_chat(self, user_id: uuid.UUID, chat_data: dict, client: openai.AsyncClient):
         youtube_service = YouTubeAPIService()
         comments = youtube_service.get_comments(chat_data.url)
 
         if isinstance(comments, dict):
-            return JSONResponse(content=comments, status_code=400)
+            yield JSONResponse(content=comments, status_code=400)
 
         decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(comments,
                                                                                   chat_data.question)
@@ -57,12 +82,15 @@ class ChatRepository:
                             commentblob=decoded_comments)
 
             if chat_data.question:
-                openai_service = OpenAIService()
-                gpt_response = await openai_service.get_completion(
-                    decoded_comments, decoded_question)
+                gpt_response = await self.openai_get_completion(client, decoded_comments, decoded_question)
+                content = ""
+                async for chunk in gpt_response:
+                    if chunk.choices[0].delta.content:
+                        content += chunk.choices[0].delta.content
+                        yield chunk.choices[0].delta.content
 
                 new_response = Response(
-                    question=decoded_question, response=gpt_response, tokens=total_chat_tokens, chat_id=new_chat.id)
+                    question=decoded_question, response=content, tokens=total_chat_tokens, chat_id=new_chat.id)
 
             try:
                 self.db.add(new_chat)
@@ -75,8 +103,6 @@ class ChatRepository:
                 # deduct from user token balance
                 subscription = await subscription_repo.decrease_user_balance(
                     user_id, total_chat_tokens)
-
-                return new_response
 
             except IntegrityError as e:
                 if "duplicate key value violates unique constraint" in str(e):
@@ -92,7 +118,7 @@ class ChatRepository:
                                          "reason": "Not enough balance, please purchase more tokens"}
             )
 
-    async def continue_chat(self, user_id: uuid.UUID, chat_data: dict):
+    async def continue_chat(self, user_id: uuid.UUID, client, chat_data: dict):
         stmt = select(Chat).where(
             (Chat.id == chat_data.chat_id) & (Chat.user_id == user_id) & (Chat.delete == "N"))
         result = await self.db.execute(stmt)
@@ -111,12 +137,16 @@ class ChatRepository:
         balance = await subscription_repo.get_user_balance(user_id)
 
         if balance >= total_chat_tokens:
-            openai_service = OpenAIService()
-            gpt_response = await openai_service.get_completion(
-                decoded_comments, decoded_question)
+            gpt_response = await self.openai_get_completion(client, decoded_comments, decoded_question)
+
+            content = ""
+            async for chunk in gpt_response:
+                if chunk.choices[0].delta.content:
+                    content += chunk.choices[0].delta.content
+                    yield chunk.choices[0].delta.content
 
             new_response = Response(question=decoded_question,
-                                    response=gpt_response,
+                                    response=content,
                                     tokens=total_chat_tokens,
                                     chat_id=chat_data.chat_id)
             try:
@@ -127,8 +157,6 @@ class ChatRepository:
 
                 # deduct from user token balance
                 subscription = await subscription_repo.decrease_user_balance(user_id, total_chat_tokens)
-
-                return new_response
 
             except IntegrityError as e:
                 if "duplicate key value violates unique constraint" in str(e):

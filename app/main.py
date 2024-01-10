@@ -15,6 +15,8 @@ from api.users.services import auth_backend, fastapi_users
 from fastapi.middleware.cors import CORSMiddleware
 
 
+app = FastAPI(title='iSocial')
+
 origins = [
     'http://23.100.16.133',
     'http://23.100.16.133:8000'
@@ -26,8 +28,6 @@ methods = ['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT']
 # Only these headers are allowed
 headers = ["Content-Type", "Accept", "Authorization"]
 
-
-app = FastAPI(title='iSocial')
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 app.add_middleware(
     CORSMiddleware,
