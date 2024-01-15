@@ -1,15 +1,14 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from httpx import stream
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import desc
-from db.models.chat import Chat
-from db.models.responses import Response
-from db.repositories.payments_repository import SubscriptionRepository
-from api.youtube.services import YouTubeAPIService
+from app.db.models.chat import Chat
+from app.db.models.responses import Response
+from app.db.repositories.payments_repository import SubscriptionRepository
+from app.api.youtube.services import YouTubeAPIService
 import uuid
 import openai
 
@@ -78,6 +77,7 @@ class ChatRepository:
         if balance >= total_chat_tokens:
             new_chat = Chat(id=chat_data.chat_id,
                             user_id=user_id,
+                            platform=chat_data.platform,
                             url=chat_data.url,
                             commentblob=decoded_comments)
 

@@ -14,11 +14,12 @@ services:
       - "5432:5432"
 
   app:
-    build: 
-      context: .
+    build: . 
     container_name: isocial
     restart: always
-    command: /bin/sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./:/isocial
     ports:
       - "8000:8000"
     depends_on:

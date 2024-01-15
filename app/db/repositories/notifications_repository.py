@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.models.notification import Notification
+from app.db.models.notification import Notification
 
 
 class NotificationRepositoryAsync:

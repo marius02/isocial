@@ -47,7 +47,7 @@ class YouTubeAPIService:
                                 all_extracted_comments.append(
                                     reply['snippet']['textOriginal'])
 
-                return ';'.join(all_extracted_comments)
+                return '; '.join(all_extracted_comments)
 
             except HttpError as e:
                 if e.error_details[0].get('reason') == "commentsDisabled":

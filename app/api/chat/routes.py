@@ -2,17 +2,17 @@ import uuid
 
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
-from api.chat.models import (Chat,
-                             AllChats,
-                             ChatData,
-                             ChatContinueData,
-                             ChatContinueResponse,
-                             ChatCreateResponse)
-from db.db_config import get_async_session
-from db.repositories.chat_repository import ChatRepository
+from app.api.chat.models import (Chat,
+                                 AllChats,
+                                 ChatData,
+                                 ChatContinueData,
+                                 ChatContinueResponse,
+                                 ChatCreateResponse)
+from app.db.db_config import get_async_session
+from app.db.repositories.chat_repository import ChatRepository
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.users.services import current_active_user
+from app.api.users.services import current_active_user
 import openai
 import os
 from dotenv import load_dotenv

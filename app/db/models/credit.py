@@ -1,4 +1,4 @@
-from db.db_config import Base
+from app.db.db_config import Base
 from sqlalchemy.sql import func
 from sqlalchemy import Column, String, ForeignKey, TIMESTAMP, Float
 from sqlalchemy.dialects.postgresql import UUID

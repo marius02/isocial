@@ -8,11 +8,11 @@ from fastapi_users import (BaseUserManager,
                            UUIDIDMixin,
                            )
 from fastapi_users.db import SQLAlchemyUserDatabase
-from db.db_config import User, get_user_db
+from app.db.db_config import User, get_user_db
 
 from fastapi import Depends, Request
-from api.users.utils.email import send_welcome_email
-from db.models.users import User
+from app.api.users.utils.email import send_welcome_email
+from app.db.models.users import User
 import uuid
 import os
 

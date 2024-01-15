@@ -1,6 +1,6 @@
 FROM python:3.11.1-slim
 
-WORKDIR /app
+WORKDIR /
 
 COPY poetry.lock pyproject.toml ./
 
@@ -10,6 +10,6 @@ RUN poetry config virtualenvs.create false
 
 RUN poetry install --no-root
 
-COPY ./app .
+COPY . .
 
 EXPOSE 8000

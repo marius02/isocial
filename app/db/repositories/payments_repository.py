@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.models.credit import Credit
-from db.models.subscription import Subscription, UserSubscription
+from app.db.models.credit import Credit
+from app.db.models.subscription import Subscription, UserSubscription
 from sqlalchemy.future import select
 from fastapi import HTTPException
 from datetime import datetime

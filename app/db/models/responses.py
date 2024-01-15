@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 
-from db.db_config import Base
+from app.db.db_config import Base
 
 
 class Response(Base):
@@ -17,6 +17,11 @@ class Response(Base):
 
     question = Column(Text, nullable=True)
     response = Column(Text, nullable=True)
+    search = Column(Text, nullable=True)
+    img_url1 = Column(Text, nullable=True)
+    img_url2 = Column(Text, nullable=True)
+    img_url3 = Column(Text, nullable=True)
+    img_url4 = Column(Text, nullable=True)
     date = Column(DateTime, server_default=func.now())
     tokens = Column(Integer, nullable=True)
     rating = Column(Integer, nullable=True)

@@ -1,8 +1,8 @@
-from api.users.services import current_active_user
+from app.api.users.services import current_active_user
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from db.db_config import get_async_session
-from db.repositories.notifications_repository import NotificationRepositoryAsync
+from app.db.db_config import get_async_session
+from app.db.repositories.notifications_repository import NotificationRepositoryAsync
 from .models import NotificationResponse
 
 router = APIRouter()

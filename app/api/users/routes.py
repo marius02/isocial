@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi_users import models
 from fastapi_users.manager import BaseUserManager
 
-from api.users.schemas import AuthPassChange, Auth, Question
+from app.api.users.schemas import AuthPassChange, Auth, Question
 
-from db.db_config import User
-from api.users.services import get_user_manager, current_active_user
+from app.db.db_config import User
+from app.api.users.services import get_user_manager, current_active_user
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication and authorization"])

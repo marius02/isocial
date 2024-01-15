@@ -1,10 +1,9 @@
-from httpx import delete
-from api.users.services import current_active_user
+from app.api.users.services import current_active_user
 from fastapi import APIRouter, HTTPException, Depends
 from .models import AddCreditRequest
-from db.db_config import get_async_session
-from db.repositories.notifications_repository import NotificationRepositoryAsync
-from db.repositories.payments_repository import PaymentRepositoryAsync, SubscriptionRepository
+from app.db.db_config import get_async_session
+from app.db.repositories.notifications_repository import NotificationRepositoryAsync
+from app.db.repositories.payments_repository import PaymentRepositoryAsync, SubscriptionRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

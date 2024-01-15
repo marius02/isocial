@@ -1,5 +1,5 @@
 import uuid
-from db.db_config import Base
+from app.db.db_config import Base
 from sqlalchemy import Column, ForeignKey, String, Text, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -23,6 +23,8 @@ class Chat(Base):
     delete = Column(String, default='N')
 
     created_at = Column(DateTime, server_default=func.now())
+
+    platform = Column(String)
 
     chats = relationship(
         "Response",

@@ -1,17 +1,17 @@
 from fastapi import FastAPI
 
-from api.chat.routes import router as chat_router
-from api.users.routes import router as user_router
-from api.notifications.routes import router as notification_router
-from api.payments.routes import router as payment_router
+from app.api.chat.routes import router as chat_router
+from app.api.users.routes import router as user_router
+from app.api.notifications.routes import router as notification_router
+from app.api.payments.routes import router as payment_router
 
 from starlette.middleware.sessions import SessionMiddleware
 
-from api.users.schemas import UserCreate, UserRead, UserUpdate
+from app.api.users.schemas import UserCreate, UserRead, UserUpdate
 
-from db.db_config import User, create_db_and_tables
-from api.users.schemas import UserCreate, UserRead, UserUpdate
-from api.users.services import auth_backend, fastapi_users
+from app.db.db_config import User, create_db_and_tables
+from app.api.users.schemas import UserCreate, UserRead, UserUpdate
+from app.api.users.services import auth_backend, fastapi_users
 from fastapi.middleware.cors import CORSMiddleware
 
 

@@ -5,11 +5,13 @@ from pydantic import BaseModel, HttpUrl
 class ChatData(BaseModel):
     chat_id: uuid.UUID
     url: HttpUrl
+    platform: str
     question: str = None
 
 
 class ChatContinueData(BaseModel):
     chat_id: uuid.UUID
+    platform: str
     question: str = None
 
 
