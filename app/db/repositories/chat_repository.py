@@ -9,6 +9,7 @@ from app.db.models.chat import Chat
 from app.db.models.responses import Response
 from app.db.repositories.payments_repository import SubscriptionRepository
 from app.api.youtube.services import YouTubeAPIService
+from app.api.twitter.services import TwitterAPIService
 import uuid
 import openai
 
@@ -17,9 +18,11 @@ class ChatRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    def count_tokens(self, comments: str, question: str):
+    def count_tokens(self, comments: str, question: str, search: str = None):
 
         input_total_tokens = 0
+
+        # TODO: REPLACE LEN WITH OPENAI TIKTOKEN TO COUNT TOKENS CORRECTLY
 
         if len(comments) <= 2000:
             input_total_tokens += len(comments)
@@ -31,10 +34,15 @@ class ChatRepository:
         else:
             input_total_tokens += 2000
 
-        total_chat_tokens = (4097 - int(input_total_tokens)
-                             ) + int(input_total_tokens)
+        if search:
+            search_tokens = len(search)
 
-        return comments[:2000], question[:2000], total_chat_tokens
+        total_chat_tokens = (4097 - int(input_total_tokens) - int(search_tokens)
+                             ) + int(input_total_tokens) + int(search_tokens)
+        if search:
+            return comments[:2000], question[:2000], search, total_chat_tokens
+        else:
+            return comments[:2000], question[:2000], total_chat_tokens
 
     async def openai_get_completion(self, client: openai.AsyncClient, comments: str, prompt: str):
         messages = [
@@ -61,62 +69,130 @@ class ChatRepository:
                 status_code=500, detail=f"OpenAI Error: {str(e)}")
 
     async def create_chat(self, user_id: uuid.UUID, chat_data: dict, client: openai.AsyncClient):
-        youtube_service = YouTubeAPIService()
-        comments = youtube_service.get_comments(chat_data.url)
+        if chat_data.platform == "YouTube":
+            youtube_service = YouTubeAPIService()
+            comments = youtube_service.get_comments(chat_data.url)
 
-        if isinstance(comments, dict):
-            yield JSONResponse(content=comments, status_code=400)
+            if isinstance(comments, dict):
+                yield JSONResponse(content=comments, status_code=400)
 
-        decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(comments,
-                                                                                  chat_data.question)
+            decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(comments,
+                                                                                      chat_data.question)
 
-        # Get user token balance and check if the balance has enough tokens
-        subscription_repo = SubscriptionRepository(self.db)
-        balance = await subscription_repo.get_user_balance(user_id)
+            # Get user token balance and check if the balance has enough tokens
+            subscription_repo = SubscriptionRepository(self.db)
+            balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= total_chat_tokens:
-            new_chat = Chat(id=chat_data.chat_id,
-                            user_id=user_id,
-                            platform=chat_data.platform,
-                            url=chat_data.url,
-                            commentblob=decoded_comments)
+            if balance >= total_chat_tokens:
+                new_chat = Chat(id=chat_data.chat_id,
+                                user_id=user_id,
+                                platform=chat_data.platform,
+                                url=chat_data.url,
+                                commentblob=decoded_comments)
 
-            if chat_data.question:
-                gpt_response = await self.openai_get_completion(client, decoded_comments, decoded_question)
-                content = ""
-                async for chunk in gpt_response:
-                    if chunk.choices[0].delta.content:
-                        content += chunk.choices[0].delta.content
-                        yield chunk.choices[0].delta.content
+                if chat_data.question:
+                    gpt_response = await self.openai_get_completion(client, decoded_comments, decoded_question)
+                    content = ""
+                    async for chunk in gpt_response:
+                        if chunk.choices[0].delta.content:
+                            content += chunk.choices[0].delta.content
+                            yield chunk.choices[0].delta.content
 
-                new_response = Response(
-                    question=decoded_question, response=content, tokens=total_chat_tokens, chat_id=new_chat.id)
+                    new_response = Response(
+                        question=decoded_question, response=content, tokens=total_chat_tokens, chat_id=new_chat.id)
 
-            try:
-                self.db.add(new_chat)
-                self.db.add(new_response)
+                    try:
+                        self.db.add(new_chat)
+                        self.db.add(new_response)
 
-                await self.db.commit()
-                await self.db.refresh(new_chat)
-                await self.db.refresh(new_response)
+                        await self.db.commit()
+                        await self.db.refresh(new_chat)
+                        await self.db.refresh(new_response)
 
-                # deduct from user token balance
-                subscription = await subscription_repo.decrease_user_balance(
-                    user_id, total_chat_tokens)
+                        # deduct from user token balance
+                        subscription = await subscription_repo.decrease_user_balance(
+                            user_id, total_chat_tokens)
 
-            except IntegrityError as e:
-                if "duplicate key value violates unique constraint" in str(e):
-                    raise HTTPException(
-                        status_code=400, detail="Chat with this ID already exists")
-                else:
-                    raise HTTPException(
-                        status_code=500, detail="An error occurred while creating the chat")
+                    except IntegrityError as e:
+                        if "duplicate key value violates unique constraint" in str(e):
+                            raise HTTPException(
+                                status_code=400, detail="Chat with this ID already exists")
+                        else:
+                            raise HTTPException(
+                                status_code=500, detail="An error occurred while creating the chat")
+
+            else:
+                raise HTTPException(
+                    status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                             "reason": "Not enough balance, please purchase more tokens"}
+                )
+
+        elif chat_data.platform == "X":
+            twitter_service = TwitterAPIService()
+            tweets, images_urls = twitter_service.get_tweets(chat_data.search)
+            decoded_tweets, decoded_question, decoded_search, total_chat_tokens = self.count_tokens(tweets,
+                                                                                                    chat_data.question, chat_data.search)
+
+            # Get user token balance and check if the balance has enough tokens
+            subscription_repo = SubscriptionRepository(self.db)
+            balance = await subscription_repo.get_user_balance(user_id)
+
+            if balance >= total_chat_tokens:
+                new_chat = Chat(id=chat_data.chat_id,
+                                user_id=user_id,
+                                platform=chat_data.platform,
+                                commentblob=decoded_comments)
+
+                if chat_data.question:
+                    gpt_response = await self.openai_get_completion(client, decoded_tweets, decoded_question)
+                    content = ""
+                    async for chunk in gpt_response:
+                        if chunk.choices[0].delta.content:
+                            content += chunk.choices[0].delta.content
+                            yield chunk.choices[0].delta.content
+
+                    new_response = Response(search=decoded_search,
+                                            question=decoded_question,
+                                            response=content,
+                                            img_url1=images_urls.get(
+                                                "img_url1"),
+                                            img_url2=images_urls.get(
+                                                "img_url2"),
+                                            img_url3=images_urls.get(
+                                                "img_url3"),
+                                            img_url4=images_urls.get(
+                                                "img_url4"),
+                                            tokens=total_chat_tokens,
+                                            chat_id=new_chat.id)
+
+                    try:
+                        self.db.add(new_chat)
+                        self.db.add(new_response)
+
+                        await self.db.commit()
+                        await self.db.refresh(new_chat)
+                        await self.db.refresh(new_response)
+
+                        # deduct from user token balance
+                        subscription = await subscription_repo.decrease_user_balance(
+                            user_id, total_chat_tokens)
+
+                    except IntegrityError as e:
+                        if "duplicate key value violates unique constraint" in str(e):
+                            raise HTTPException(
+                                status_code=400, detail="Chat with this ID already exists")
+                        else:
+                            raise HTTPException(
+                                status_code=500, detail="An error occurred while creating the chat")
+
+            else:
+                raise HTTPException(
+                    status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                             "reason": "Not enough balance, please purchase more tokens"}
+                )
 
         else:
-            raise HTTPException(
-                status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
-                                         "reason": "Not enough balance, please purchase more tokens"}
-            )
+            raise ValueError("Invalid platform.")
 
     async def continue_chat(self, user_id: uuid.UUID, client, chat_data: dict):
         stmt = select(Chat).where(

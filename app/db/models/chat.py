@@ -16,7 +16,7 @@ class Chat(Base):
 
     user = relationship("User", back_populates="all_chats")
 
-    url = Column(String)
+    url = Column(String, nullable=True)
 
     commentblob = Column(Text, nullable=True)
 

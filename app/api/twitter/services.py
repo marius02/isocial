@@ -25,7 +25,8 @@ class TwitterAPIService:
             tweets_text_set = set()
 
             for tweet in response.data:
-                tweets_text_set.add(tweet.text)
+                tweet_str = str(tweet.text)
+                tweets_text_set.add(tweet_str)
                 attachments = tweet.attachments
                 if isinstance(attachments, dict) and 'media_keys' in attachments and media:
                     media_keys = attachments.get('media_keys')
@@ -33,11 +34,10 @@ class TwitterAPIService:
                         if key in media and media[key].preview_image_url:
                             images_urls_set.add(media[key].preview_image_url)
 
-            images_urls = list(images_urls_set)[:4]
-
-            # TODO: IMPLEMENT RETURN AND PLATFORM ARGUMENT
-            print(images_urls)
-            print('; '.join(tweets_text_set))
+            images_urls_list = list(images_urls_set)[:4]
+            images_urls = {f"img_url{i+1}": value for i, value in enumerate(images_urls_list)}
+            tweets = '; '.join(tweets_text_set)
+            return tweets, images_urls
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -45,4 +45,5 @@ class TwitterAPIService:
 
 if __name__ == "__main__":
     api = TwitterAPIService()
-    twits = api.get_tweets("@elonmusk")
+    tweets, images = api.get_tweets("@elonmusk")
+    print(f"TWEETS: {tweets}\nIMAGEs: {images}")

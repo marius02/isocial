@@ -4,7 +4,8 @@ from pydantic import BaseModel, HttpUrl
 
 class ChatData(BaseModel):
     chat_id: uuid.UUID
-    url: HttpUrl
+    url: HttpUrl = None
+    search: str = None
     platform: str
     question: str = None
 
