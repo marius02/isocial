@@ -4,7 +4,8 @@ from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 from app.api.chat.models import (Chat,
                                  AllChats,
-                                 ChatData,
+                                 YouTubeChatData,
+                                 TwitterChatData,
                                  ChatContinueData,
                                  ChatContinueResponse,
                                  ChatCreateResponse)
@@ -45,7 +46,7 @@ async def get_user_chats(user=Depends(current_active_user), db: AsyncSession = D
 
 
 @router.post("/", response_model=ChatCreateResponse)
-async def create_new_chat(chat_data: ChatData, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session), client=Depends(init_openai_client)):
+async def create_new_chat(chat_data: YouTubeChatData, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session), client=Depends(init_openai_client)):
     chat_repo = ChatRepository(db)
     return StreamingResponse(chat_repo.create_chat(user.id, chat_data, client), media_type='text/event-stream')
 
@@ -66,3 +67,9 @@ async def delete_chat(chat_id: uuid.UUID, user=Depends(current_active_user),  db
 async def get_chat(chat_id: uuid.UUID, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session)):
     chat_repo = ChatRepository(db)
     return await chat_repo.get_chat(user.id, chat_id)
+
+
+@router.post("/new-search", response_model=ChatCreateResponse)
+async def create_new_search(chat_data: TwitterChatData, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session), client=Depends(init_openai_client)):
+    chat_repo = ChatRepository(db)
+    return StreamingResponse(chat_repo.create_search(user.id, chat_data, client), media_type='text/event-stream')
