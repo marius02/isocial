@@ -54,7 +54,7 @@ async def create_new_chat(chat_data: YouTubeChatData, user=Depends(current_activ
 @router.post("/continue", response_model=ChatContinueResponse)
 async def continue_chat(chat_data: ChatContinueData, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session), client=Depends(init_openai_client)):
     chat_repo = ChatRepository(db)
-    return StreamingResponse(chat_repo.continue_chat(user.id, client, chat_data), media_type='text/event-stream')
+    return await chat_repo.continue_chat(user.id, client, chat_data)
 
 
 @router.delete("/{chat_id}/")
@@ -72,4 +72,4 @@ async def get_chat(chat_id: uuid.UUID, user=Depends(current_active_user), db: As
 @router.post("/new-search", response_model=ChatCreateResponse)
 async def create_new_search(chat_data: TwitterChatData, user=Depends(current_active_user), db: AsyncSession = Depends(get_async_session), client=Depends(init_openai_client)):
     chat_repo = ChatRepository(db)
-    return StreamingResponse(chat_repo.create_search(user.id, chat_data, client), media_type='text/event-stream')
+    return await chat_repo.create_search(user.id, chat_data, client)

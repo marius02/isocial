@@ -11,20 +11,19 @@ class Chat(Base):
 
     id = Column(UUID(as_uuid=True), default=uuid.uuid4,
                 nullable=False, unique=True, index=True, primary_key=True)
-
+    
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-
+   
     user = relationship("User", back_populates="all_chats")
-
     url = Column(String, nullable=True)
-
     commentblob = Column(Text, nullable=True)
-
     delete = Column(String, default='N')
-
     created_at = Column(DateTime, server_default=func.now())
-
     platform = Column(String)
+    img_url1 = Column(Text, nullable=True)
+    img_url2 = Column(Text, nullable=True)
+    img_url3 = Column(Text, nullable=True)
+    img_url4 = Column(Text, nullable=True)
 
     chats = relationship(
         "Response",

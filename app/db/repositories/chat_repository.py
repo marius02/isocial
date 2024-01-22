@@ -132,7 +132,7 @@ class ChatRepository:
         twitter_service = TwitterAPIService()
         tweets, images_urls = twitter_service.get_tweets(chat_data.search)
         decoded_tweets, decoded_question, decoded_search, total_chat_tokens = self.count_tokens(tweets,
-                                                                                                chat_data.question, 
+                                                                                                chat_data.question,
                                                                                                 chat_data.search)
 
         # Get user token balance and check if the balance has enough tokens
@@ -143,6 +143,14 @@ class ChatRepository:
             new_chat = Chat(id=chat_data.chat_id,
                             user_id=user_id,
                             platform=chat_data.platform,
+                            img_url1=images_urls.get(
+                                "img_url1"),
+                            img_url2=images_urls.get(
+                                "img_url2"),
+                            img_url3=images_urls.get(
+                                "img_url3"),
+                            img_url4=images_urls.get(
+                                "img_url4"),
                             commentblob=decoded_tweets)
 
             if chat_data.question:
@@ -151,19 +159,10 @@ class ChatRepository:
                 async for chunk in gpt_response:
                     if chunk.choices[0].delta.content:
                         content += chunk.choices[0].delta.content
-                        yield chunk.choices[0].delta.content
 
                 new_response = Response(search=decoded_search,
                                         question=decoded_question,
                                         response=content,
-                                        img_url1=images_urls.get(
-                                            "img_url1"),
-                                        img_url2=images_urls.get(
-                                            "img_url2"),
-                                        img_url3=images_urls.get(
-                                            "img_url3"),
-                                        img_url4=images_urls.get(
-                                            "img_url4"),
                                         tokens=total_chat_tokens,
                                         chat_id=new_chat.id)
 
@@ -178,6 +177,8 @@ class ChatRepository:
                     # deduct from user token balance
                     subscription = await subscription_repo.decrease_user_balance(
                         user_id, total_chat_tokens)
+
+                    return new_response
 
                 except IntegrityError as e:
                     if "duplicate key value violates unique constraint" in str(e):
@@ -218,7 +219,6 @@ class ChatRepository:
             async for chunk in gpt_response:
                 if chunk.choices[0].delta.content:
                     content += chunk.choices[0].delta.content
-                    yield chunk.choices[0].delta.content
 
             new_response = Response(question=decoded_question,
                                     response=content,
@@ -232,6 +232,8 @@ class ChatRepository:
 
                 # deduct from user token balance
                 subscription = await subscription_repo.decrease_user_balance(user_id, total_chat_tokens)
+
+                return new_response
 
             except IntegrityError as e:
                 if "duplicate key value violates unique constraint" in str(e):
