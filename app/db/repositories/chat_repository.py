@@ -32,8 +32,8 @@ class ChatRepository:
                 input_total_tokens += 2000
         else:
             input_total_tokens += 0
-            
-        if question:    
+
+        if question:
             if len(question) <= 2000:
                 input_total_tokens += len(question)
             else:
@@ -46,11 +46,18 @@ class ChatRepository:
 
             total_chat_tokens = (4097 - int(input_total_tokens) - int(search_tokens)
                                  ) + int(input_total_tokens) + int(search_tokens)
-            return comments[:2000], question[:2000], search, total_chat_tokens
+            if comments and question:
+                return comments[:2000], question[:2000], search, total_chat_tokens
+            else:
+                return "", "", search, total_chat_tokens
         else:
             total_chat_tokens = (
                 4097 - int(input_total_tokens)) + int(input_total_tokens)
-            return comments[:2000], question[:2000], search, total_chat_tokens
+
+            if comments and question:
+                return comments[:2000], question[:2000], search, total_chat_tokens
+            else:
+                return "", "", search, total_chat_tokens
 
     async def openai_get_completion(self, client: openai.AsyncClient, comments: str, prompt: str):
         messages = [
