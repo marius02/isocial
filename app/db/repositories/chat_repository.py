@@ -25,16 +25,21 @@ class ChatRepository:
         input_total_tokens = 0
 
         # TODO: REPLACE LEN WITH OPENAI TIKTOKEN TO COUNT TOKENS CORRECTLY
-
-        if len(comments) <= 2000:
-            input_total_tokens += len(comments)
+        if comments:
+            if len(comments) <= 2000:
+                input_total_tokens += len(comments)
+            else:
+                input_total_tokens += 2000
         else:
-            input_total_tokens += 2000
-
-        if len(question) <= 2000:
-            input_total_tokens += len(question)
+            input_total_tokens += 0
+            
+        if question:    
+            if len(question) <= 2000:
+                input_total_tokens += len(question)
+            else:
+                input_total_tokens += 2000
         else:
-            input_total_tokens += 2000
+            input_total_tokens += 0
 
         if search:
             search_tokens = len(search)
