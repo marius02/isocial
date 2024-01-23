@@ -1,3 +1,4 @@
+import datetime
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from app.api.youtube.services import YouTubeAPIService
 from app.api.twitter.services import TwitterAPIService
 import uuid
 import openai
+import validators
 
 
 class ChatRepository:
@@ -128,6 +130,27 @@ class ChatRepository:
             )
 
     async def create_search(self, user_id: uuid.UUID, chat_data: dict, client: openai.AsyncClient):
+        # Check if the search term has more than 2 words
+        if len(chat_data.search.split()) > 2:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "token_type": "bearer",
+                    "code": "INVALID_SEARCH",
+                    "reason": "Max two words are expected"
+                }
+            )
+
+        # Check if the search term is a URL
+        if validators.url(chat_data.search) and not chat_data.search.startswith("http://localhost:"):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "token_type": "bearer",
+                    "code": "INVALID_SEARCH",
+                    "reason": "Only search terms expected"
+                }
+            )
 
         twitter_service = TwitterAPIService()
         tweets, images_urls = twitter_service.get_tweets(chat_data.search)
@@ -178,7 +201,9 @@ class ChatRepository:
                     subscription = await subscription_repo.decrease_user_balance(
                         user_id, total_chat_tokens)
 
-                    return new_response
+                    new_chat.created_at = new_chat.created_at.strftime(
+                        "%Y-%m-%d")
+                    return new_chat
 
                 except IntegrityError as e:
                     if "duplicate key value violates unique constraint" in str(e):
@@ -187,6 +212,61 @@ class ChatRepository:
                     else:
                         raise HTTPException(
                             status_code=500, detail="An error occurred while creating the chat")
+
+        else:
+            raise HTTPException(
+                status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                         "reason": "Not enough balance, please purchase more tokens"}
+            )
+
+    async def continue_chat(self, user_id: uuid.UUID, client, chat_data: dict):
+        stmt = select(Chat).where(
+            (Chat.id == chat_data.chat_id) & (Chat.user_id == user_id) & (Chat.delete == "N"))
+        result = await self.db.execute(stmt)
+
+        chat = result.scalar()
+
+        if not chat:
+            raise HTTPException(
+                status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found")
+
+        decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(chat.commentblob,
+                                                                                  chat_data.question)
+
+        # Get user token balance and check if the balance has enough tokens
+        subscription_repo = SubscriptionRepository(self.db)
+        balance = await subscription_repo.get_user_balance(user_id)
+
+        if balance >= total_chat_tokens:
+            gpt_response = await self.openai_get_completion(client, decoded_comments, decoded_question)
+
+            content = ""
+            async for chunk in gpt_response:
+                if chunk.choices[0].delta.content:
+                    content += chunk.choices[0].delta.content
+
+            new_response = Response(question=decoded_question,
+                                    response=content,
+                                    tokens=total_chat_tokens,
+                                    chat_id=chat_data.chat_id)
+            try:
+                self.db.add(new_response)
+
+                await self.db.commit()
+                await self.db.refresh(new_response)
+
+                # deduct from user token balance
+                subscription = await subscription_repo.decrease_user_balance(user_id, total_chat_tokens)
+
+                return new_response
+
+            except IntegrityError as e:
+                if "duplicate key value violates unique constraint" in str(e):
+                    raise HTTPException(
+                        status_code=400, detail="Chat with this ID already exists")
+                else:
+                    raise HTTPException(
+                        status_code=500, detail="An error occurred while creating the chat")
 
         else:
             raise HTTPException(
@@ -271,6 +351,7 @@ class ChatRepository:
         chat = result.scalar()
 
         if chat:
+            chat.created_at = chat.created_at.strftime("%Y-%m-%d")
             return chat
         else:
             raise HTTPException(

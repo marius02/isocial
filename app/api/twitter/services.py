@@ -19,6 +19,9 @@ class TwitterAPIService:
                 expansions=['attachments.media_keys'],
                 max_results=100)
 
+            if response is None:
+                return None, None
+
             media = {m["media_key"]: m for m in response.includes['media']}
 
             images_urls_set = set()
@@ -35,12 +38,14 @@ class TwitterAPIService:
                             images_urls_set.add(media[key].preview_image_url)
 
             images_urls_list = list(images_urls_set)[:4]
-            images_urls = {f"img_url{i+1}": value for i, value in enumerate(images_urls_list)}
+            images_urls = {f"img_url{i+1}": value for i,
+                           value in enumerate(images_urls_list)}
             tweets = '; '.join(tweets_text_set)
             return tweets, images_urls
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+            return None, None
 
 
 if __name__ == "__main__":

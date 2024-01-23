@@ -1,5 +1,6 @@
 import uuid
 from pydantic import BaseModel, HttpUrl
+from datetime import datetime
 
 
 class YouTubeChatData(BaseModel):
@@ -32,6 +33,7 @@ class ChatContinueResponse(ChatResponse):
 class Chat(BaseModel):
     id: uuid.UUID
     platform: str = None
+    created_at: str
     url: str = None
     search: str = None
     img_url1: str = None
@@ -68,8 +70,9 @@ class ChatShort(BaseModel):
 
 
 class ChatCreateResponse(BaseModel):
-    chat_id: uuid.UUID
     id: uuid.UUID
+    platform: str = None
+    created_at: str
     img_url1: str = None
     img_url2: str = None
     img_url3: str = None
@@ -78,14 +81,6 @@ class ChatCreateResponse(BaseModel):
 
     class Config:
         orm_mode = True
-        exclude = ("img_url1",
-                   "img_url2",
-                   "img_url3",
-                   "img_url4")
-
-    def dict(self, *args, **kwargs):
-        kwargs['exclude_unset'] = True  # Only include fields with values
-        return super().dict(*args, **kwargs)
 
 
 class AllChats(BaseModel):
