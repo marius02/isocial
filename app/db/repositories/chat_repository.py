@@ -1,4 +1,3 @@
-import datetime
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import desc
 from app.db.models.chat import Chat
 from app.db.models.responses import Response
+from app.api.chat.models import ChatCreateResponse
 from app.db.repositories.payments_repository import SubscriptionRepository
 from app.api.youtube.services import YouTubeAPIService
 from app.api.twitter.services import TwitterAPIService
@@ -20,7 +20,7 @@ class ChatRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    def count_tokens(self, comments: str, question: str, search: str = None):
+    def count_tokens(self, comments: str, question: str, search: str = ""):
 
         input_total_tokens = 0
 
@@ -45,7 +45,7 @@ class ChatRepository:
         else:
             total_chat_tokens = (
                 4097 - int(input_total_tokens)) + int(input_total_tokens)
-            return comments[:2000], question[:2000], total_chat_tokens
+            return comments[:2000], question[:2000], search, total_chat_tokens
 
     async def openai_get_completion(self, client: openai.AsyncClient, comments: str, prompt: str):
         messages = [
@@ -142,7 +142,7 @@ class ChatRepository:
             )
 
         # Check if the search term is a URL
-        if validators.url(chat_data.search) and not chat_data.search.startswith("http://localhost:"):
+        elif validators.url(chat_data.search):
             raise HTTPException(
                 status_code=400,
                 detail={
@@ -152,72 +152,84 @@ class ChatRepository:
                 }
             )
 
-        twitter_service = TwitterAPIService()
-        tweets, images_urls = twitter_service.get_tweets(chat_data.search)
-        decoded_tweets, decoded_question, decoded_search, total_chat_tokens = self.count_tokens(tweets,
-                                                                                                chat_data.question,
-                                                                                                chat_data.search)
-
-        # Get user token balance and check if the balance has enough tokens
-        subscription_repo = SubscriptionRepository(self.db)
-        balance = await subscription_repo.get_user_balance(user_id)
-
-        if balance >= total_chat_tokens:
-            new_chat = Chat(id=chat_data.chat_id,
-                            user_id=user_id,
-                            platform=chat_data.platform,
-                            img_url1=images_urls.get(
-                                "img_url1"),
-                            img_url2=images_urls.get(
-                                "img_url2"),
-                            img_url3=images_urls.get(
-                                "img_url3"),
-                            img_url4=images_urls.get(
-                                "img_url4"),
-                            commentblob=decoded_tweets)
-
-            if chat_data.question:
-                gpt_response = await self.openai_get_completion(client, decoded_tweets, decoded_question)
-                content = ""
-                async for chunk in gpt_response:
-                    if chunk.choices[0].delta.content:
-                        content += chunk.choices[0].delta.content
-
-                new_response = Response(search=decoded_search,
-                                        question=decoded_question,
-                                        response=content,
-                                        tokens=total_chat_tokens,
-                                        chat_id=new_chat.id)
-
-                try:
-                    self.db.add(new_chat)
-                    self.db.add(new_response)
-
-                    await self.db.commit()
-                    await self.db.refresh(new_chat)
-                    await self.db.refresh(new_response)
-
-                    # deduct from user token balance
-                    subscription = await subscription_repo.decrease_user_balance(
-                        user_id, total_chat_tokens)
-
-                    new_chat.created_at = new_chat.created_at.strftime(
-                        "%Y-%m-%d")
-                    return new_chat
-
-                except IntegrityError as e:
-                    if "duplicate key value violates unique constraint" in str(e):
-                        raise HTTPException(
-                            status_code=400, detail="Chat with this ID already exists")
-                    else:
-                        raise HTTPException(
-                            status_code=500, detail="An error occurred while creating the chat")
-
         else:
-            raise HTTPException(
-                status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
-                                         "reason": "Not enough balance, please purchase more tokens"}
-            )
+            twitter_service = TwitterAPIService()
+            tweets, images_urls = twitter_service.get_tweets(chat_data.search)
+            decoded_tweets, decoded_question, decoded_search, total_chat_tokens = self.count_tokens(tweets,
+                                                                                                    chat_data.question,
+                                                                                                    chat_data.search)
+
+            # Get user token balance and check if the balance has enough tokens
+            subscription_repo = SubscriptionRepository(self.db)
+            balance = await subscription_repo.get_user_balance(user_id)
+
+            if balance >= total_chat_tokens:
+                new_chat = Chat(id=chat_data.chat_id,
+                                user_id=user_id,
+                                platform=chat_data.platform,
+                                img_url1=images_urls.get(
+                                    "img_url1"),
+                                img_url2=images_urls.get(
+                                    "img_url2"),
+                                img_url3=images_urls.get(
+                                    "img_url3"),
+                                img_url4=images_urls.get(
+                                    "img_url4"),
+                                commentblob=decoded_tweets)
+
+                if chat_data.question:
+                    gpt_response = await self.openai_get_completion(client, decoded_tweets, decoded_question)
+                    content = ""
+                    async for chunk in gpt_response:
+                        if chunk.choices[0].delta.content:
+                            content += chunk.choices[0].delta.content
+
+                    new_response = Response(search=decoded_search,
+                                            question=decoded_question,
+                                            response=content,
+                                            tokens=total_chat_tokens,
+                                            chat_id=new_chat.id)
+
+                    try:
+                        self.db.add(new_chat)
+                        self.db.add(new_response)
+
+                        await self.db.commit()
+                        await self.db.refresh(new_chat)
+                        await self.db.refresh(new_response)
+
+                        # deduct from user token balance
+                        subscription = await subscription_repo.decrease_user_balance(
+                            user_id, total_chat_tokens)
+
+                        new_chat.created_at = new_chat.created_at.strftime(
+                            "%Y-%m-%d")
+
+                        chat_with_response = ChatCreateResponse(
+                            id=new_chat.id,
+                            created_at=new_chat.created_at,
+                            platform=new_chat.platform,
+                            img_url1=new_chat.img_url1,
+                            img_url2=new_chat.img_url2,
+                            img_url3=new_chat.img_url3,
+                            img_url4=new_chat.img_url4,
+                            response=new_response.response,
+                        )
+                        return chat_with_response
+
+                    except IntegrityError as e:
+                        if "duplicate key value violates unique constraint" in str(e):
+                            raise HTTPException(
+                                status_code=400, detail="Chat with this ID already exists")
+                        else:
+                            raise HTTPException(
+                                status_code=500, detail="An error occurred while creating the chat")
+
+            else:
+                raise HTTPException(
+                    status_code=400, detail={"code": "INSUFFICIENT_BALANCE",
+                                             "reason": "Not enough balance, please purchase more tokens"}
+                )
 
     async def continue_chat(self, user_id: uuid.UUID, client, chat_data: dict):
         stmt = select(Chat).where(
@@ -230,8 +242,8 @@ class ChatRepository:
             raise HTTPException(
                 status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found")
 
-        decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(chat.commentblob,
-                                                                                  chat_data.question)
+        decoded_comments, decoded_question, _, total_chat_tokens = self.count_tokens(chat.commentblob,
+                                                                                     chat_data.question)
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
@@ -285,8 +297,8 @@ class ChatRepository:
             raise HTTPException(
                 status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found")
 
-        decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(chat.commentblob,
-                                                                                  chat_data.question)
+        decoded_comments, decoded_question, _, total_chat_tokens = self.count_tokens(chat.commentblob,
+                                                                                     chat_data.question)
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
