@@ -180,13 +180,13 @@ class ChatRepository:
                                 user_id=user_id,
                                 platform=chat_data.platform,
                                 img_url1=images_urls.get(
-                                    "img_url1"),
+                                    "img_url1") if images_urls else None,
                                 img_url2=images_urls.get(
-                                    "img_url2"),
+                                    "img_url2") if images_urls else None,
                                 img_url3=images_urls.get(
-                                    "img_url3"),
+                                    "img_url3") if images_urls else None,
                                 img_url4=images_urls.get(
-                                    "img_url4"),
+                                    "img_url4") if images_urls else None,
                                 commentblob=decoded_tweets)
 
                 if chat_data.question:
