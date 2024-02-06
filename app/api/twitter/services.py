@@ -17,7 +17,7 @@ class TwitterAPIService:
                 query,
                 media_fields=['preview_image_url'],
                 expansions=['attachments.media_keys'],
-                max_results=100)
+                max_results=10)
 
             if response is None:
                 return None, None

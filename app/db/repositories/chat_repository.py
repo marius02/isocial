@@ -90,8 +90,8 @@ class ChatRepository:
         if isinstance(comments, dict):
             yield JSONResponse(content=comments, status_code=400)
 
-        decoded_comments, decoded_question, total_chat_tokens = self.count_tokens(comments,
-                                                                                  chat_data.question)
+        decoded_comments, decoded_question, _, total_chat_tokens = self.count_tokens(comments,
+                                                                                     chat_data.question)
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
