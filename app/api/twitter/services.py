@@ -8,21 +8,26 @@ load_dotenv()
 
 class TwitterAPIService:
     def __init__(self) -> None:
-        self.BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
+        self.TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
     def get_tweets(self, query: str):
         try:
-            twitter_client = tweepy.Client(self.BEARER_TOKEN)
+            twitter_client = tweepy.Client(
+                bearer_token=self.TWITTER_BEARER_TOKEN)
             response = twitter_client.search_recent_tweets(
                 query,
                 media_fields=['preview_image_url'],
                 expansions=['attachments.media_keys'],
                 max_results=10)
 
+            print(response)
+
             if response is None:
                 return None, None
 
-            media = {m["media_key"]: m for m in response.includes['media']}
+            media = {}
+            if response.includes.get('media'):
+                media = {m["media_key"]: m for m in response.includes['media']}
 
             images_urls_set = set()
             tweets_text_set = set()
@@ -50,5 +55,5 @@ class TwitterAPIService:
 
 if __name__ == "__main__":
     api = TwitterAPIService()
-    tweets, images = api.get_tweets("@elonmusk")
+    tweets, images = api.get_tweets("@RBC")
     print(f"TWEETS: {tweets}\nIMAGEs: {images}")
