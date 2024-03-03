@@ -20,8 +20,6 @@ class TwitterAPIService:
                 expansions=['attachments.media_keys'],
                 max_results=10)
 
-            print(response)
-
             if response is None:
                 return None, None
 

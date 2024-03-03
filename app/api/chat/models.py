@@ -1,6 +1,7 @@
+from datetime import datetime
+from typing import Optional
 import uuid
 from pydantic import BaseModel, HttpUrl
-from datetime import datetime
 
 
 class YouTubeChatData(BaseModel):
@@ -14,7 +15,11 @@ class TwitterChatData(BaseModel):
     chat_id: uuid.UUID
     platform: str = "X"
     search: str
+    date: datetime
     question: str = None
+
+    class Config:
+        orm_mode = True
 
 
 class ChatResponse(BaseModel):
@@ -28,18 +33,19 @@ class ChatResponse(BaseModel):
 
 class ChatContinueResponse(ChatResponse):
     chat_id: uuid.UUID
+    date: datetime
 
 
 class Chat(BaseModel):
     id: uuid.UUID
     platform: str = None
-    created_at: str
+    created_at: datetime
     url: str = None
     search: str = None
-    img_url1: str = None
-    img_url2: str = None
-    img_url3: str = None
-    img_url4: str = None
+    img_url1: Optional[str] = None
+    img_url2: Optional[str] = None
+    img_url3: Optional[str] = None
+    img_url4: Optional[str] = None
     chats: list[ChatResponse]
 
     class Config:
@@ -59,11 +65,13 @@ class Chat(BaseModel):
 class ChatContinueData(BaseModel):
     chat_id: uuid.UUID
     question: str = None
+    date: datetime
 
 
 class ChatShort(BaseModel):
     id: uuid.UUID
     url: str = None
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -72,11 +80,11 @@ class ChatShort(BaseModel):
 class ChatCreateResponse(BaseModel):
     id: uuid.UUID
     platform: str = None
-    created_at: str
-    img_url1: str = None
-    img_url2: str = None
-    img_url3: str = None
-    img_url4: str = None
+    date: datetime
+    img_url1: Optional[str] = None
+    img_url2: Optional[str] = None
+    img_url3: Optional[str] = None
+    img_url4: Optional[str] = None
     response: str = None
 
     class Config:

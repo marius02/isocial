@@ -179,6 +179,7 @@ class ChatRepository:
                 new_chat = Chat(id=chat_data.chat_id,
                                 user_id=user_id,
                                 platform=chat_data.platform,
+                                created_at=chat_data.date,
                                 img_url1=images_urls.get(
                                     "img_url1") if images_urls else None,
                                 img_url2=images_urls.get(
@@ -214,8 +215,8 @@ class ChatRepository:
                         subscription = await subscription_repo.decrease_user_balance(
                             user_id, total_chat_tokens)
 
-                        new_chat.created_at = new_chat.created_at.strftime(
-                            "%Y-%m-%d")
+                        # new_chat.created_at = new_chat.created_at.strftime(
+                        #     "%Y-%m-%d")
 
                         chat_with_response = ChatCreateResponse(
                             id=new_chat.id,
@@ -327,6 +328,7 @@ class ChatRepository:
             new_response = Response(question=decoded_question,
                                     response=content,
                                     tokens=total_chat_tokens,
+                                    date=chat_data.date,
                                     chat_id=chat_data.chat_id)
             try:
                 self.db.add(new_response)
