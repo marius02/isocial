@@ -53,5 +53,5 @@ class TwitterAPIService:
 
 if __name__ == "__main__":
     api = TwitterAPIService()
-    tweets, images = api.get_tweets("@RBC")
+    tweets, images = api.get_tweets("@rbc")
     print(f"TWEETS: {tweets}\nIMAGEs: {images}")

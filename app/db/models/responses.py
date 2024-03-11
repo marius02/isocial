@@ -1,17 +1,23 @@
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column, ForeignKey, Text, Integer, DateTime
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 import uuid
 
 from app.db.db_config import Base
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 
 class Response(Base):
     __tablename__ = "responses"
 
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4,
-                nullable=False, unique=True, index=True, primary_key=True)
+    id = Column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        nullable=False,
+        unique=True,
+        index=True,
+        primary_key=True,
+    )
 
     chat_id = Column(UUID(as_uuid=True), ForeignKey("all_chats.id"))
 
