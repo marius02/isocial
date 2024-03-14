@@ -449,7 +449,6 @@ class ChatRepository:
         chat = result.scalar()
 
         if chat:
-            chat.created_at = chat.created_at.strftime("%Y-%m-%d")
             return chat
         else:
             raise HTTPException(
