@@ -16,7 +16,7 @@ class TwitterChatData(BaseModel):
     chat_id: uuid.UUID
     platform: str = "X"
     search: str
-    date: datetime = datetime.now()
+    date: datetime
     question: str = None
 
     class Config:
@@ -40,7 +40,7 @@ class ChatContinueResponse(ChatResponse):
 class Chat(BaseModel):
     id: uuid.UUID
     platform: str = None
-    created_at: datetime = datetime.now()
+    created_at: datetime
     url: str = None
     search: str = None
     img_url1: Optional[str] = None
@@ -61,7 +61,7 @@ class Chat(BaseModel):
 class ChatContinueData(BaseModel):
     chat_id: uuid.UUID
     question: str = None
-    date: datetime = datetime.now()
+    date: datetime
 
 
 class ChatShort(BaseModel):
@@ -76,7 +76,7 @@ class ChatShort(BaseModel):
 class ChatCreateResponse(BaseModel):
     id: uuid.UUID
     platform: str = None
-    date: datetime = datetime.now()
+    date: datetime
     img_url1: Optional[str] = None
     img_url2: Optional[str] = None
     img_url3: Optional[str] = None
