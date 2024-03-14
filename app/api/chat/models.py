@@ -40,7 +40,7 @@ class ChatContinueResponse(ChatResponse):
 class Chat(BaseModel):
     id: uuid.UUID
     platform: str = None
-    created_at: dt
+    created_at: Optional[dt]
     url: str = None
     search: str = None
     img_url1: Optional[str] = None
