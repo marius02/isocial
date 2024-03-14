@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime as dt
 from typing import Optional
 
 from pydantic import BaseModel, HttpUrl
@@ -16,7 +16,7 @@ class TwitterChatData(BaseModel):
     chat_id: uuid.UUID
     platform: str = "X"
     search: str
-    date: datetime
+    date: dt
     question: str = None
 
     class Config:
@@ -34,13 +34,13 @@ class ChatResponse(BaseModel):
 
 class ChatContinueResponse(ChatResponse):
     chat_id: uuid.UUID
-    date: datetime
+    date: dt
 
 
 class Chat(BaseModel):
     id: uuid.UUID
     platform: str = None
-    created_at: datetime
+    created_at: dt
     url: str = None
     search: str = None
     img_url1: Optional[str] = None
@@ -61,13 +61,13 @@ class Chat(BaseModel):
 class ChatContinueData(BaseModel):
     chat_id: uuid.UUID
     question: str = None
-    date: datetime
+    date: dt
 
 
 class ChatShort(BaseModel):
     id: uuid.UUID
     url: str = None
-    created_at: datetime
+    created_at: dt
 
     class Config:
         orm_mode = True
@@ -76,7 +76,7 @@ class ChatShort(BaseModel):
 class ChatCreateResponse(BaseModel):
     id: uuid.UUID
     platform: str = None
-    date: datetime
+    date: dt
     img_url1: Optional[str] = None
     img_url2: Optional[str] = None
     img_url3: Optional[str] = None
