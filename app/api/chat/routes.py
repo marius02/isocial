@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 import openai
 from app.api.chat.models import (
     AllChats,
-    Chat,
     ChatContinueData,
     ChatContinueResponse,
     ChatCreateResponse,
@@ -100,7 +99,6 @@ async def delete_chat(
 @router.get(
     "/{chat_id}/",
     description="Retrieve details of a specific chat using its chat ID",
-    response_model=Chat,
 )
 async def get_chat(
     chat_id: uuid.UUID,
