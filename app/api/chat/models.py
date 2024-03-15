@@ -10,6 +10,7 @@ class YouTubeChatData(BaseModel):
     url: HttpUrl = None
     platform: str = "YouTube"
     question: str = None
+    created_at: dt
 
 
 class TwitterChatData(BaseModel):

@@ -109,6 +109,7 @@ class ChatRepository:
             new_chat = Chat(
                 id=chat_data.chat_id,
                 user_id=user_id,
+                created_at=chat_data.created_at,
                 platform=chat_data.platform,
                 url=chat_data.url,
                 commentblob=decoded_comments,
@@ -245,8 +246,10 @@ class ChatRepository:
                         user_id, total_chat_tokens
                     )
 
-                    # new_chat.created_at = new_chat.created_at.strftime(
-                    #     "%Y-%m-%d")
+                    new_chat.created_at = new_chat.created_at.strptime("2024-03-14T18:49:14.244Z", "%Y-%m-%dT%H:%M:%S.%fZ")
+                    # Remove timezone information
+                    new_chat.created_at = new_chat.created_at.replace(tzinfo=None)
+
                     chat_with_response = ChatCreateResponse(
                         id=new_chat.id,
                         created_at=new_chat.created_at,
