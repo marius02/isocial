@@ -206,7 +206,7 @@ class ChatRepository:
                     id=chat_data.chat_id,
                     user_id=user_id,
                     platform=chat_data.platform,
-                    created_at=chat_data.date,
+                    created_at=chat_data.created_at,
                     **{
                         f"img_url{i}": images_urls.get(f"img_url{i}")
                         for i in range(1, 5)
@@ -246,13 +246,9 @@ class ChatRepository:
                         user_id, total_chat_tokens
                     )
 
-                    new_chat.created_at = new_chat.created_at.strptime("2024-03-14T18:49:14.244Z", "%Y-%m-%dT%H:%M:%S.%fZ")
-                    # Remove timezone information
-                    new_chat.created_at = new_chat.created_at.replace(tzinfo=None)
-
                     chat_with_response = ChatCreateResponse(
                         id=new_chat.id,
-                        created_at=new_chat.created_at,
+                        date=new_chat.created_at,
                         platform=new_chat.platform,
                         img_url1=new_chat.img_url1,
                         img_url2=new_chat.img_url2,
@@ -392,7 +388,6 @@ class ChatRepository:
                 question=decoded_question,
                 response=content,
                 tokens=total_chat_tokens,
-                date=chat_data.date,
                 chat_id=chat_data.chat_id,
             )
             try:
