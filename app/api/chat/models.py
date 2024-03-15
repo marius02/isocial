@@ -86,6 +86,11 @@ class ChatCreateResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        exclude = ("img_url1", "img_url2", "img_url3", "img_url4")
+
+    def dict(self, *args, **kwargs):
+        kwargs["exclude_unset"] = True  # Only include fields with values
+        return super().dict(*args, **kwargs)
 
 
 class AllChats(BaseModel):

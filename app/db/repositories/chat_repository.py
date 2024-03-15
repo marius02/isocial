@@ -1,6 +1,7 @@
 import uuid
 
 import openai
+import tiktoken
 import validators
 from app.api.chat.models import ChatCreateResponse
 from app.api.twitter.services import TwitterAPIService
@@ -9,7 +10,6 @@ from app.db.models.chat import Chat
 from app.db.models.responses import Response
 from app.db.repositories.payments_repository import SubscriptionRepository
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
 from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,114 +21,87 @@ class ChatRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    def count_tokens(self, comments: str, question: str, search: str = ""):
-        input_total_tokens = 0
+    def count_tokens(self, comments: str, question: str = "", search: str = ""):
+        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo-1106")
+        encoded_comments = encoding.encode(comments)[:2000]
+        encoded_question = encoding.encode(question)[:2000]
+        encoded_search = encoding.encode(search)[:2000]
 
-        # TODO: REPLACE LEN WITH OPENAI TIKTOKEN TO COUNT TOKENS CORRECTLY
-        if comments:
-            if len(comments) <= 2000:
-                input_total_tokens += len(comments)
-            else:
-                input_total_tokens += 2000
-        else:
-            input_total_tokens += 0
+        total_chat_tokens = sum(
+            [len(encoded_comments), len(encoded_question), len(encoded_search)]
+        )
 
-        if question:
-            if len(question) <= 2000:
-                input_total_tokens += len(question)
-            else:
-                input_total_tokens += 2000
-        else:
-            input_total_tokens += 0
+        return {
+            "decoded_comments": encoding.decode(encoded_comments),
+            "decoded_question": encoding.decode(encoded_question),
+            "decoded_search": encoding.decode(encoded_search),
+            "total_tokens": total_chat_tokens,
+        }
 
-        if search:
-            search_tokens = len(search)
-
-            total_chat_tokens = (
-                (4097 - int(input_total_tokens) - int(search_tokens))
-                + int(input_total_tokens)
-                + int(search_tokens)
-            )
-            if comments and question:
-                return comments[:2000], question[:2000], search, total_chat_tokens
-            else:
-                return "", "", search, total_chat_tokens
-        else:
-            total_chat_tokens = (4097 - int(input_total_tokens)) + int(
-                input_total_tokens
-            )
-
-            if comments and question:
-                return comments[:2000], question[:2000], search, total_chat_tokens
-            else:
-                return "", "", search, total_chat_tokens
-
-    async def openai_get_completion(
-        self, client: openai.AsyncClient, comments: str, prompt: str
-    ):
+    def openai_get_completion(self, client: openai.Client, comments: str, prompt: str):
         messages = [
+            {"role": "system", "content": "you are helpful assistant"},
             {
                 "role": "user",
                 "content": f"""The following are users comments about the content with each comment separated by a ;.
                                 {prompt}
                                 Comments: {comments}
                 """,
-            }
+            },
         ]
 
         try:
-            response = await client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo-1106",
                 messages=messages,
                 temperature=0,
-                stream=True,
             )
-            return response
+            return response.choices[0].message.content
 
         except openai.OpenAIError as e:
             raise HTTPException(status_code=500, detail=f"OpenAI Error: {str(e)}")
 
     async def create_chat(
-        self, user_id: uuid.UUID, chat_data: dict, client: openai.AsyncClient
+        self, user_id: uuid.UUID, chat_data: dict, client: openai.Client
     ):
         youtube_service = YouTubeAPIService()
         comments = youtube_service.get_comments(chat_data.url)
 
         if isinstance(comments, dict):
-            yield JSONResponse(content=comments, status_code=400)
+            raise HTTPException(content=comments, status_code=400)
 
-        decoded_comments, decoded_question, _, total_chat_tokens = self.count_tokens(
-            comments, chat_data.question
+        counted_and_decoded_tokens = self.count_tokens(
+            comments=comments, question=chat_data.question
         )
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
         balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= total_chat_tokens:
+        if balance is None:
+            raise HTTPException(status_code=404, detail="Balance not found for user")
+
+        if balance >= counted_and_decoded_tokens.get("total_tokens"):
             new_chat = Chat(
                 id=chat_data.chat_id,
                 user_id=user_id,
                 created_at=chat_data.created_at,
                 platform=chat_data.platform,
                 url=chat_data.url,
-                commentblob=decoded_comments,
+                commentblob=counted_and_decoded_tokens.get("decoded_comments"),
             )
 
             if chat_data.question:
-                gpt_response = await self.openai_get_completion(
-                    client, decoded_comments, decoded_question
+                gpt_response = self.openai_get_completion(
+                    client,
+                    counted_and_decoded_tokens.get("decoded_comments"),
+                    counted_and_decoded_tokens.get("decoded_question"),
                 )
-                content = ""
-                async for chunk in gpt_response:
-                    if chunk.choices[0].delta.content:
-                        content += chunk.choices[0].delta.content
-                        yield chunk.choices[0].delta.content
 
                 new_response = Response(
-                    question=decoded_question,
-                    response=content,
-                    tokens=total_chat_tokens,
+                    question=counted_and_decoded_tokens.get("decoded_question"),
+                    response=gpt_response,
+                    tokens=counted_and_decoded_tokens.get("total_tokens"),
                     chat_id=new_chat.id,
                 )
 
@@ -140,10 +113,12 @@ class ChatRepository:
                     await self.db.refresh(new_chat)
                     await self.db.refresh(new_response)
 
-                    # deduct from user token balance
-                    subscription = await subscription_repo.decrease_user_balance(
-                        user_id, total_chat_tokens
+                    # Deduct tokens from user's balance
+                    await subscription_repo.decrease_user_balance(
+                        user_id, counted_and_decoded_tokens.get("total_tokens")
                     )
+
+                    return new_response
 
                 except IntegrityError as e:
                     if "duplicate key value violates unique constraint" in str(e):
@@ -152,8 +127,7 @@ class ChatRepository:
                         )
                     else:
                         raise HTTPException(
-                            status_code=500,
-                            detail="An error occurred while creating the chat",
+                            status_code=500, detail="Error while creating the chat"
                         )
 
         else:
@@ -166,7 +140,7 @@ class ChatRepository:
             )
 
     async def create_search(
-        self, user_id: uuid.UUID, chat_data: dict, client: openai.AsyncClient
+        self, user_id: uuid.UUID, chat_data: dict, client: openai.Client
     ):
         # Check if the search term has more than 2 words
         if len(chat_data.search.split()) > 2:
@@ -193,43 +167,41 @@ class ChatRepository:
         else:
             twitter_service = TwitterAPIService()
             tweets, images_urls = twitter_service.get_tweets(chat_data.search)
-            decoded_tweets, decoded_question, decoded_search, total_chat_tokens = (
-                self.count_tokens(tweets, chat_data.search, chat_data.question)
+            counted_and_decoded_tokens = self.count_tokens(
+                comments=tweets, question=chat_data.question, search=chat_data.search
             )
-
             # Get user token balance and check if the balance has enough tokens
             subscription_repo = SubscriptionRepository(self.db)
             balance = await subscription_repo.get_user_balance(user_id)
 
-            if balance >= total_chat_tokens:
+            if balance >= counted_and_decoded_tokens.get("total_tokens"):
                 new_chat = Chat(
                     id=chat_data.chat_id,
                     user_id=user_id,
                     platform=chat_data.platform,
-                    created_at=chat_data.created_at,
+                    created_at=chat_data.date,
                     **{
                         f"img_url{i}": images_urls.get(f"img_url{i}")
                         for i in range(1, 5)
                     },
-                    commentblob=decoded_tweets,
+                    commentblob=counted_and_decoded_tokens.get("decoded_comments"),
                 )
 
-                content = ""
+                gpt_response = ""
 
-                if decoded_question:
-                    gpt_response = await self.openai_get_completion(
-                        client, decoded_tweets, decoded_question
+                if counted_and_decoded_tokens.get("decoded_question"):
+                    gpt_response = self.openai_get_completion(
+                        client,
+                        counted_and_decoded_tokens.get("decoded_comments"),
+                        counted_and_decoded_tokens.get("decoded_question"),
                     )
-                    content = ""
-                    async for chunk in gpt_response:
-                        if chunk.choices[0].delta.content:
-                            content += chunk.choices[0].delta.content
 
                 new_response = Response(
-                    search=decoded_search,
-                    question=decoded_question,
-                    response=content if content else decoded_tweets,
-                    tokens=total_chat_tokens,
+                    question=counted_and_decoded_tokens.get("decoded_question"),
+                    response=gpt_response
+                    if gpt_response
+                    else counted_and_decoded_tokens.get("decoded_comments"),
+                    tokens=counted_and_decoded_tokens.get("total_tokens"),
                     chat_id=new_chat.id,
                 )
 
@@ -242,8 +214,8 @@ class ChatRepository:
                     await self.db.refresh(new_response)
 
                     # deduct from user token balance
-                    subscription = await subscription_repo.decrease_user_balance(
-                        user_id, total_chat_tokens
+                    await subscription_repo.decrease_user_balance(
+                        user_id, counted_and_decoded_tokens.get("total_tokens")
                     )
 
                     chat_with_response = ChatCreateResponse(
@@ -256,6 +228,7 @@ class ChatRepository:
                         img_url4=new_chat.img_url4,
                         response=new_response.response,
                     )
+
                     return chat_with_response
 
                 except IntegrityError as e:
@@ -294,30 +267,30 @@ class ChatRepository:
                 status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found"
             )
 
-        decoded_comments, decoded_question, _, total_chat_tokens = self.count_tokens(
-            chat.commentblob, chat_data.question
+        counted_and_decoded_tokens = self.count_tokens(
+            comments=chat.commentblob, question=chat_data.question
         )
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
         balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= total_chat_tokens:
-            gpt_response = await self.openai_get_completion(
-                client, decoded_comments, decoded_question
+        if balance >= counted_and_decoded_tokens.get("total_tokens"):
+            gpt_response = self.openai_get_completion(
+                client,
+                counted_and_decoded_tokens.get("decoded_comments"),
+                counted_and_decoded_tokens.get("decoded_question"),
             )
-
-            content = ""
-            async for chunk in gpt_response:
-                if chunk.choices[0].delta.content:
-                    content += chunk.choices[0].delta.content
 
             new_response = Response(
-                question=decoded_question,
-                response=content,
-                tokens=total_chat_tokens,
+                question=counted_and_decoded_tokens.get("decoded_question"),
+                response=gpt_response
+                if gpt_response
+                else counted_and_decoded_tokens.get("decoded_comments"),
+                tokens=counted_and_decoded_tokens.get("total_tokens"),
                 chat_id=chat_data.chat_id,
             )
+
             try:
                 self.db.add(new_response)
 
@@ -325,8 +298,8 @@ class ChatRepository:
                 await self.db.refresh(new_response)
 
                 # deduct from user token balance
-                subscription = await subscription_repo.decrease_user_balance(
-                    user_id, total_chat_tokens
+                await subscription_repo.decrease_user_balance(
+                    user_id, counted_and_decoded_tokens.get("total_tokens")
                 )
 
                 return new_response
@@ -366,28 +339,25 @@ class ChatRepository:
                 status_code=404, detail=f"Chat with id:{chat_data.chat_id} not found"
             )
 
-        decoded_tweets, decoded_question, _, total_chat_tokens = self.count_tokens(
-            chat.commentblob, chat_data.question
+        counted_and_decoded_tokens = self.count_tokens(
+            chat.commentblob, question=chat_data.question
         )
 
         # Get user token balance and check if the balance has enough tokens
         subscription_repo = SubscriptionRepository(self.db)
         balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= total_chat_tokens:
-            gpt_response = await self.openai_get_completion(
-                client, decoded_tweets, decoded_question
+        if balance >= counted_and_decoded_tokens.get("total_tokens"):
+            gpt_response = self.openai_get_completion(
+                client,
+                counted_and_decoded_tokens.get("decoded_comments"),
+                counted_and_decoded_tokens.get("decoded_question"),
             )
 
-            content = ""
-            async for chunk in gpt_response:
-                if chunk.choices[0].delta.content:
-                    content += chunk.choices[0].delta.content
-
             new_response = Response(
-                question=decoded_question,
-                response=content,
-                tokens=total_chat_tokens,
+                question=counted_and_decoded_tokens.get("decoded_question"),
+                response=gpt_response,
+                tokens=counted_and_decoded_tokens.get("total_tokens"),
                 chat_id=chat_data.chat_id,
             )
             try:
@@ -397,8 +367,8 @@ class ChatRepository:
                 await self.db.refresh(new_response)
 
                 # deduct from user token balance
-                subscription = await subscription_repo.decrease_user_balance(
-                    user_id, total_chat_tokens
+                await subscription_repo.decrease_user_balance(
+                    user_id, counted_and_decoded_tokens.get("total_tokens")
                 )
 
                 return new_response

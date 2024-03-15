@@ -15,12 +15,11 @@ from app.api.users.services import current_active_user
 from app.db.db_config import get_async_session
 from app.db.repositories.chat_repository import ChatRepository
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def init_openai_client():
-    client = openai.AsyncOpenAI()
+    client = openai.Client()
     client.api_key = os.getenv("OPENAI_API_KEY")
     return client
 
@@ -62,10 +61,8 @@ async def create_new_chat(
     client=Depends(init_openai_client),
 ):
     chat_repo = ChatRepository(db)
-    return StreamingResponse(
-        chat_repo.create_chat(user.id, chat_data, client),
-        media_type="text/event-stream",
-    )
+    results = await chat_repo.create_chat(user.id, chat_data, client)
+    return results
 
 
 @router.post(

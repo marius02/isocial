@@ -1,7 +1,7 @@
 import uuid
 
 from app.db.db_config import Base
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -24,7 +24,7 @@ class Response(Base):
     question = Column(Text, nullable=True)
     response = Column(Text, nullable=True)
     search = Column(Text, nullable=True)
-    date = Column(DateTime, server_default=func.now())
+    date = Column(TIMESTAMP(timezone=True), server_default=func.now())
     tokens = Column(Integer, nullable=True)
     rating = Column(Integer, nullable=True)
 

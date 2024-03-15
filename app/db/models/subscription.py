@@ -1,8 +1,10 @@
-from app.db.db_config import Base
-from sqlalchemy.sql import func
-from sqlalchemy import (Column, ForeignKey, DateTime, Float, Integer)
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
+
+from app.db.db_config import Base
+from sqlalchemy import TIMESTAMP, Column, Float, ForeignKey, Integer
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
+from sqlalchemy.sql import func
 
 
 class Subscription(Base):
@@ -17,10 +19,17 @@ class Subscription(Base):
 class UserSubscription(Base):
     __tablename__ = "usersubscription"
 
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4,
-                nullable=False, unique=True, index=True, primary_key=True)
+    id = Column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        nullable=False,
+        unique=True,
+        index=True,
+        primary_key=True,
+    )
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    sid = Column(Integer, ForeignKey(
-        "subscriptions.id"), primary_key=True)
-    buy_date = Column(DateTime, server_default=func.now(), nullable=False)
+    sid = Column(Integer, ForeignKey("subscriptions.id"), primary_key=True)
+    buy_date = Column(
+        TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
+    )
     balance = Column(Integer, default=0)

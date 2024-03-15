@@ -69,7 +69,7 @@ class SubscriptionRepository:
             await self.db.refresh(existing_user_subscription)
         else:
             raise HTTPException(
-                status_code=404, detail=f"Subscription not found")
+                status_code=404, detail="Subscription not found")
 
     async def get_user_balance(self, user_id: str):
         user_subscription = await self.get_user_subscription(user_id)
@@ -77,4 +77,4 @@ class SubscriptionRepository:
             return user_subscription.balance
         else:
             raise HTTPException(
-                status_code=404, detail=f"User not found or has no subscription")
+                status_code=404, detail="User not found or has no subscription")
