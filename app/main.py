@@ -15,7 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 app = FastAPI(title="iSocial")
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain("cert.pem", keyfile="key.pem")
+ssl_context.load_cert_chain('cert.pem', keyfile='key.pem')
 
 origins = [
     "http://23.100.16.133",
