@@ -1,25 +1,27 @@
-from fastapi import FastAPI
+import ssl
 
 from app.api.chat.routes import router as chat_router
-from app.api.users.routes import router as user_router
 from app.api.notifications.routes import router as notification_router
 from app.api.payments.routes import router as payment_router
-
-from starlette.middleware.sessions import SessionMiddleware
-
-from app.api.users.schemas import UserCreate, UserRead, UserUpdate
-
-from app.db.db_config import User, create_db_and_tables
+from app.api.users.routes import router as user_router
 from app.api.users.schemas import UserCreate, UserRead, UserUpdate
 from app.api.users.services import auth_backend, fastapi_users
+from app.db.db_config import create_db_and_tables
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI(title='iSocial')
 
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain('/path/to/cert.pem', keyfile='/path/to/key.pem')
+
 origins = [
     'http://23.100.16.133',
-    'http://23.100.16.133:8000'
+    'http://23.100.16.133:8000',
+    'https://23.100.16.133',
+    'https://23.100.16.133:8000',
+    'https://isocial.ai'
 ]
 
 # Allow these methods to be used

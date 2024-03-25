@@ -23,6 +23,7 @@ tiktoken = "^0.5.1"
 openai = "^1.6.1"
 alembic = "^1.13.1"
 validators = "^0.22.0"
+cryptography = "^42.0.5"
 
 
 [build-system]
