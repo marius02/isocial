@@ -1,5 +1,3 @@
-import ssl
-
 from app.api.chat.routes import router as chat_router
 from app.api.notifications.routes import router as notification_router
 from app.api.payments.routes import router as payment_router
@@ -9,13 +7,8 @@ from app.api.users.services import auth_backend, fastapi_users
 from app.db.db_config import create_db_and_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI(title="iSocial")
-
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain('cert.pem', keyfile='key.pem')
 
 origins = [
     "http://23.100.16.133",
@@ -31,7 +24,6 @@ methods = ["GET", "POST", "OPTIONS", "DELETE", "PATCH", "PUT"]
 # Only these headers are allowed
 headers = ["Content-Type", "Accept", "Authorization"]
 
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -39,7 +31,6 @@ app.add_middleware(
     allow_methods=methods,
     allow_headers=headers,
 )
-app.add_middleware(HTTPSRedirectMiddleware)
 
 app.include_router(chat_router)
 app.include_router(
