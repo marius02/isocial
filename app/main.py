@@ -37,7 +37,7 @@ app.include_router(chat_router)
 app.include_router(
     fastapi_users.get_auth_router(auth_backend, requires_verification=True),
     prefix="/auth/jwt",
-    tags=["Authentication and authorization  "],
+    tags=["Authentication and authorization"],
 )
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
