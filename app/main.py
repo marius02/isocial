@@ -16,6 +16,7 @@ origins = [
     "https://23.100.16.133",
     "https://23.100.16.133:8000",
     "https://isocial.ai",
+    "http://isocial.ai",
 ]
 
 # Allow these methods to be used
