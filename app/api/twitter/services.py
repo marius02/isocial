@@ -15,21 +15,40 @@ class TwitterAPIService:
             twitter_client = tweepy.Client(bearer_token=self.TWITTER_BEARER_TOKEN)
             response = twitter_client.search_recent_tweets(
                 query,
-                media_fields=["preview_image_url", "url"],
-                expansions=["attachments.media_keys"],
+                media_fields=["url", "media_key"],
+                expansions=[
+                    "attachments.media_keys",
+                    "attachments.media_source_tweet",
+                ],
                 max_results=10,
+                tweet_fields=["attachments", "entities"],
             )
 
             if response is None:
                 return None, None
 
             images_urls_list = []
-            if response.includes.get("media"):
-                images_urls_list = [
-                    m["url"]
-                    for m in response.includes["media"]
-                    if m.get("type") == "photo"
-                ]
+            for tweet in response.data:
+                # Extract from main Tweet attachments
+                if tweet.entities.get("urls"):
+                    for url in tweet.entities.get("urls"):
+                        if url.get("images"):
+                            images_urls_list.extend(
+                                [
+                                    m["url"]
+                                    for m in url.get("images")
+                                    if "format=jpg&name=orig" in m["url"]
+                                ]
+                            )
+                if tweet.attachments and tweet.attachments.get("media_keys"):
+                    images_urls_list.extend(
+                        [
+                            m["url"]
+                            for m in response.includes["media"]
+                            if m.get("type") == "photo"
+                            and m["media_key"] in tweet.attachments["media_keys"]
+                        ]
+                    )
 
             tweets_list = [tw.text for tw in response.data]
 
