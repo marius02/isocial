@@ -23,7 +23,7 @@ origins = [
 methods = ["GET", "POST", "OPTIONS", "DELETE", "PATCH", "PUT"]
 
 # Only these headers are allowed
-headers = ["Content-Type", "Accept", "Authorization"]
+headers = ["Content-Type", "Accept", "Authorization", "Access-Control-Allow-Origin"]
 
 app.add_middleware(
     CORSMiddleware,
