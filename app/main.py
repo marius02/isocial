@@ -1,3 +1,5 @@
+import ssl
+
 from app.api.chat.routes import router as chat_router
 from app.api.notifications.routes import router as notification_router
 from app.api.payments.routes import router as payment_router
@@ -7,12 +9,11 @@ from app.api.users.services import auth_backend, fastapi_users
 from app.db.db_config import create_db_and_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import ssl
 
 app = FastAPI(title="iSocial")
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain('cert.pem', keyfile='privkey.pem')
+ssl_context.load_cert_chain("fullchain.pem", keyfile="privkey.pem")
 
 origins = [
     "http://23.100.16.133",
