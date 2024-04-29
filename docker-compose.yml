@@ -18,7 +18,7 @@ services:
       context: ./
     container_name: isocial
     restart: always
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-certfile isocial-key-vault-isocial-cert-20240429.pem --reload 
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./:/isocial
     ports:
@@ -27,6 +27,17 @@ services:
       - db
     env_file:
       - .env
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "443:443"
+    depends_on:
+      - app
 
 volumes:
   isocial_pg_data:
