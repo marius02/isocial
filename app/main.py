@@ -7,8 +7,12 @@ from app.api.users.services import auth_backend, fastapi_users
 from app.db.db_config import create_db_and_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import ssl
 
 app = FastAPI(title="iSocial")
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain('cert.pem', keyfile='privkey.pem')
 
 origins = [
     "http://23.100.16.133",
