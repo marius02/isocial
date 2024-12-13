@@ -7,7 +7,7 @@ from pydantic import BaseModel, HttpUrl
 
 class YouTubeChatData(BaseModel):
     chat_id: uuid.UUID
-    url: HttpUrl = None
+    url: str = None
     platform: str = "YouTube"
     question: str = None
     created_at: dt

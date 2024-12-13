@@ -18,6 +18,7 @@ origins = [
     "https://isocial.ai",
     "http://isocial.ai",
     "https://www.isocial.ai",
+    "http://localhost:4200"
 ]
 
 # Allow these methods to be used

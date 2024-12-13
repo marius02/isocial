@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi_users import models
+from fastapi_users import models, exceptions
 from fastapi_users.manager import BaseUserManager
 
 from app.api.users.schemas import AuthPassChange, Auth, Question
@@ -22,17 +22,50 @@ async def password_change(pass_change: AuthPassChange, user_manager: BaseUserMan
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current Password is not correct")
+    try:
+        await user_manager.reset_password_user(valid_user, pass_change.new_password)
+        return {"message": f"Password updated successfully "}
+    except exceptions.InvalidPasswordException as e:
+        print("error")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "PASSWORD_REQUREMENT_NOT_MET",
+                "reason": "Password should be minimum 5 and maximum 16 characters \n Should contain atleast 1 digit \n Should contain atleast 1 alphabet \n Should contain atleast 1 special character"
+                }
+        )
 
-    await user_manager.reset_password_user(valid_user, pass_change.new_password)
 
-    return {"message": f"Password updated successfully "}
 
 
 @router.get("/email-verification")
 async def email_verificatrion(token, user_manager: BaseUserManager[models.UP, models.ID] = Depends(get_user_manager)):
-    result = await user_manager.verify(token=token)
-    return result.is_verified
-
+    try:
+        result = await user_manager.verify(token=token)
+    
+        if result.is_verified:
+            return {
+                "detail": {
+                    "code": "USER_VERIFIED",
+                    "reason": user.email
+                }
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={ 
+                    "code": "REGISTER_USER_EXPIRED",
+                    "reason" : "Activation email is expired, please re request activation link"
+                }
+            )
+    except exceptions.UserAlreadyVerified:
+        raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={ 
+                    "code": "REGISTER_USER_ACTIVATED",
+                    "reason" : "You has been already verified"
+                }
+            )
 
 @router.get("/authenticated-route")
 async def authenticated_route(user: User = Depends(current_active_user)):

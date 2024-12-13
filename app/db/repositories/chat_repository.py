@@ -66,9 +66,10 @@ class ChatRepository:
     ):
         youtube_service = YouTubeAPIService()
         comments = youtube_service.get_comments(chat_data.url)
-
         if isinstance(comments, dict):
-            raise HTTPException(content=comments, status_code=400)
+            print("Invalid URL")
+            raise HTTPException(detail=comments['detail'], status_code=400)
+            
 
         counted_and_decoded_tokens = self.count_tokens(
             comments=comments, question=chat_data.question
