@@ -1,15 +1,32 @@
-version: '3.8'
+version: '3.9'
+
 services:
   db:
-    image: postgres:14.1-alpine
+    image: postgres:15
+    container_name: isocial_db
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - isocial_pg_data:/var/lib/postgresql/data/
     ports:
-      - '5432:5432'
-    volumes: 
-      - db:/var/lib/postgresql/data
+      - "5432:5432"
+
+  app:
+    build:
+      context: ./
+    container_name: isocial
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./:/isocial
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+
 volumes:
-  db:
-    driver: local
+  isocial_pg_data:
