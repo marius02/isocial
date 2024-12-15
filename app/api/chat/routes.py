@@ -50,7 +50,7 @@ async def get_user_chats(
 
 
 @router.post(
-    "/",
+    "",
     description="Create a new chat based on YouTube chat data",
     response_model=ChatCreateResponse,
 )
@@ -81,7 +81,7 @@ async def continue_chat(
 
 
 @router.delete(
-    "/{chat_id}/",
+    "/{chat_id}",
     description="Delete a chat with the specified chat ID associated with the authenticated user",
 )
 async def delete_chat(
@@ -94,7 +94,7 @@ async def delete_chat(
 
 
 @router.get(
-    "/{chat_id}/",
+    "/{chat_id}",
     description="Retrieve details of a specific chat using its chat ID",
 )
 async def get_chat(
