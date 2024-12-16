@@ -47,7 +47,7 @@ async def email_verificatrion(token, user_manager: BaseUserManager[models.UP, mo
             return {
                 "detail": {
                     "code": "USER_VERIFIED",
-                    "reason": user.email
+                    "reason": f"{result.email} has been verified"
                 }
             }
         else:
