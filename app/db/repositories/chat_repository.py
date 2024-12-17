@@ -240,6 +240,7 @@ class ChatRepository:
                         img_url3=new_chat.img_url3,
                         img_url4=new_chat.img_url4,
                         response=new_response.response,
+                        search = chat_data.seach
                     )
 
                     return chat_with_response
