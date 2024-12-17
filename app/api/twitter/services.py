@@ -56,8 +56,7 @@ class TwitterAPIService:
                 f"img_url{i+1}": value for i, value in enumerate(images_urls_list[:4])
             }
             tweets = "; ".join(tweets_list)
-            return tweets, images_urls
-
+            return tweets, images_urls, tweets_list
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return None, None
