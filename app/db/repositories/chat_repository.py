@@ -175,6 +175,7 @@ class ChatRepository:
                 },
             )
         else:
+            DEFAULT_IMAGE_URL='https://isocial.ai/assets/images/twitter-search.png'
             twitter_service = TwitterAPIService()
             tweets, images_urls, tweets_list = twitter_service.get_tweets(chat_data.search)
             print(tweets, 'tweets')
@@ -235,12 +236,12 @@ class ChatRepository:
                         id=new_chat.id,
                         date=new_chat.created_at,
                         platform=new_chat.platform,
-                        img_url1=new_chat.img_url1,
-                        img_url2=new_chat.img_url2,
-                        img_url3=new_chat.img_url3,
-                        img_url4=new_chat.img_url4,
-                        response=new_response.response,
-                        search = chat_data.search
+                        img_url1=new_chat.img_url1 if new_chat.img_url1 else DEFAULT_IMAGE_URL,
+                        img_url2=new_chat.img_url2 if new_chat.img_url2 else DEFAULT_IMAGE_URL,
+                        img_url3=new_chat.img_url3 if new_chat.img_url3 else DEFAULT_IMAGE_URL,
+                        img_url4=new_chat.img_url4 if new_chat.img_url4 else DEFAULT_IMAGE_URL,
+                        search = chat_data.search,
+                        title= f'twitter search used {chat_data.search}'
                     )
 
                     return chat_with_response

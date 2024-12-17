@@ -70,7 +70,7 @@ class ChatShort(BaseModel):
     url: str = None
     created_at: dt
     search: Optional[str] = None
-
+    title: Optional [str] = None
     class Config:
         orm_mode = True
 

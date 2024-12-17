@@ -24,6 +24,7 @@ class Chat(Base):
     img_url2 = Column(Text, nullable=True)
     img_url3 = Column(Text, nullable=True)
     img_url4 = Column(Text, nullable=True)
+    title = Column(Text, nullable=True)
     search = Column(Text, nullable=True)
     chats = relationship(
         "Response",
