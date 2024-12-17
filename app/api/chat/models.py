@@ -68,8 +68,8 @@ class ChatContinueData(BaseModel):
 class ChatShort(BaseModel):
     id: uuid.UUID
     url: str = None
-    search: str = None
     created_at: dt
+    search: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -84,6 +84,7 @@ class ChatCreateResponse(BaseModel):
     img_url3: Optional[str] = None
     img_url4: Optional[str] = None
     response: str = None
+    search: Optional[str] = None
 
     class Config:
         orm_mode = True
