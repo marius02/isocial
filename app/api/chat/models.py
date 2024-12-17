@@ -68,6 +68,7 @@ class ChatContinueData(BaseModel):
 class ChatShort(BaseModel):
     id: uuid.UUID
     url: str = None
+    search: str = None
     created_at: dt
 
     class Config:

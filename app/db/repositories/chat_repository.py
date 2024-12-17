@@ -64,6 +64,7 @@ class ChatRepository:
     async def create_chat(
         self, user_id: uuid.UUID, chat_data: dict, client: openai.Client
     ):
+        tokenForYtb = 200
         youtube_service = YouTubeAPIService()
         comments = youtube_service.get_comments(chat_data.url)
         if isinstance(comments, dict):
@@ -82,14 +83,14 @@ class ChatRepository:
         if balance is None:
             raise HTTPException(status_code=404, detail="Balance not found for user")
 
-        if balance >= counted_and_decoded_tokens.get("total_tokens"):
+        if balance >= counted_and_decoded_tokens.get("total_tokens") + tokenForYtb:
             new_chat = Chat(
                 id=chat_data.chat_id,
                 user_id=user_id,
                 created_at=chat_data.created_at,
                 platform=chat_data.platform,
                 url=chat_data.url,
-                commentblob=counted_and_decoded_tokens.get("decoded_comments"),
+                commentblob=counted_and_decoded_tokens.get("decoded_comments")
             )
 
             if chat_data.question:
@@ -116,7 +117,7 @@ class ChatRepository:
 
                     # Deduct tokens from user's balance
                     await subscription_repo.decrease_user_balance(
-                        user_id, counted_and_decoded_tokens.get("total_tokens")
+                        user_id, counted_and_decoded_tokens.get("total_tokens") + tokenForYtb
                     )
 
                     return new_response
@@ -164,19 +165,30 @@ class ChatRepository:
                     "reason": "Only search terms expected",
                 },
             )
-
+        elif not chat_data.search.startswith(("@", "#")):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "token_type": "bearer",
+                    "code": "INVALID_SEARCH",
+                    "reason": "Search terms must start with @ or #",
+                },
+            )
         else:
             twitter_service = TwitterAPIService()
-            tweets, images_urls = twitter_service.get_tweets(chat_data.search)
+            tweets, images_urls, tweets_list = twitter_service.get_tweets(chat_data.search)
+            print(tweets, 'tweets')
             counted_and_decoded_tokens = self.count_tokens(
                 comments=tweets, question=chat_data.question, search=chat_data.search
             )
             # Get user token balance and check if the balance has enough tokens
             subscription_repo = SubscriptionRepository(self.db)
             balance = await subscription_repo.get_user_balance(user_id)
+            token_tweets = len(tweets_list) * 200
 
-            if balance >= counted_and_decoded_tokens.get("total_tokens"):
+            if balance >= counted_and_decoded_tokens.get("total_tokens") + token_tweets:
                 new_chat = Chat(
+                    search = chat_data.search,
                     id=chat_data.chat_id,
                     user_id=user_id,
                     platform=chat_data.platform,
@@ -216,7 +228,7 @@ class ChatRepository:
 
                     # deduct from user token balance
                     await subscription_repo.decrease_user_balance(
-                        user_id, counted_and_decoded_tokens.get("total_tokens")
+                        user_id, counted_and_decoded_tokens.get("total_tokens") + token_tweets
                     )
 
                     chat_with_response = ChatCreateResponse(
