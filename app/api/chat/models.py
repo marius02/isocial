@@ -84,6 +84,7 @@ class ChatCreateResponse(BaseModel):
     img_url4: Optional[str] = None
     response: str = None
     search: Optional[str] = None
+    chat_id: uuid.UUID
 
     class Config:
         orm_mode = True
