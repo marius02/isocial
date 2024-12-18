@@ -231,7 +231,7 @@ class ChatRepository:
 
                     # deduct from user token balance
                     await subscription_repo.decrease_user_balance(
-                        user_id, counted_and_decoded_tokens.get("total_tokens") + token_tweets
+                        user_id, 4096 + token_tweets
                     )
 
                     chat_with_response = ChatCreateResponse(
