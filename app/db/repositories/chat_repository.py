@@ -197,7 +197,7 @@ class ChatRepository:
                     platform=chat_data.platform,
                     created_at=chat_data.date,
                     **{
-                        f"img_url{i}": images_urls.get(f"img_url{i}")
+                        f"img_url{i}": images_urls.get(f"img_url{i}") if images_urls.get(f"img_url{i}") else DEFAULT_IMAGE_URL  
                         for i in range(1, 5)
                     },
                     commentblob=counted_and_decoded_tokens.get("decoded_comments"),

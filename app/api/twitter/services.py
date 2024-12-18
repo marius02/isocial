@@ -11,6 +11,7 @@ class TwitterAPIService:
         self.TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
     def get_tweets(self, query: str):
+        DEFAULT_IMAGE_URL='https://isocial.ai/assets/images/twitter-search.png'
         try:
             twitter_client = tweepy.Client(bearer_token=self.TWITTER_BEARER_TOKEN)
             response = twitter_client.search_recent_tweets(
@@ -60,7 +61,7 @@ class TwitterAPIService:
             return tweets, images_urls, tweets_list
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return None, None, []
+            return "", {"image_url1":DEFAULT_IMAGE_URL, "image_url2":DEFAULT_IMAGE_URL, "image_url3":DEFAULT_IMAGE_URL, "image_url4":DEFAULT_IMAGE_URL}, []
 
 
 if __name__ == "__main__":
