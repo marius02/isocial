@@ -187,9 +187,9 @@ class ChatRepository:
             subscription_repo = SubscriptionRepository(self.db)
             balance = await subscription_repo.get_user_balance(user_id)
             token_tweets = len(tweets_list) * 200
-
+            openaiToken = len(tweets_list) > 0 if 4096 else 0
             # if balance >= counted_and_decoded_tokens.get("total_tokens") + token_tweets:
-            if balance >= 4096 + token_tweets:
+            if balance >= openaiToken + token_tweets:
                 new_chat = Chat(
                     search = chat_data.search,
                     id=chat_data.chat_id,
@@ -217,7 +217,7 @@ class ChatRepository:
                     response=gpt_response
                     if gpt_response
                     else counted_and_decoded_tokens.get("decoded_comments"),
-                    tokens= 4096 + token_tweets,
+                    tokens= openaiToken + token_tweets,
                     chat_id=new_chat.id,
                 )
 
@@ -231,7 +231,7 @@ class ChatRepository:
 
                     # deduct from user token balance
                     await subscription_repo.decrease_user_balance(
-                        user_id, 4096 + token_tweets
+                        user_id, openaiToken + token_tweets
                     )
 
                     chat_with_response = ChatCreateResponse(
