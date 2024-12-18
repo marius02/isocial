@@ -59,7 +59,7 @@ class TwitterAPIService:
             return tweets, images_urls, tweets_list
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return None, None
+            return None, None, []
 
 
 if __name__ == "__main__":
