@@ -243,6 +243,7 @@ class ChatRepository:
                         img_url3=new_chat.img_url3 if new_chat.img_url3 else DEFAULT_IMAGE_URL,
                         img_url4=new_chat.img_url4 if new_chat.img_url4 else DEFAULT_IMAGE_URL,
                         search = chat_data.search,
+                        response=new_response.response,
                     )
 
                     return chat_with_response
