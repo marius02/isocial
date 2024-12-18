@@ -152,7 +152,7 @@ class ChatRepository:
                 detail={
                     "token_type": "bearer",
                     "code": "INVALID_SEARCH",
-                    "reason": "Max two words are expected",
+                    "reason": "Only one words are expected",
                 },
             )
 
