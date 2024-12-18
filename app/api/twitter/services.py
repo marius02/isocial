@@ -25,9 +25,10 @@ class TwitterAPIService:
             )
 
             if response is None:
-                return None, None
+                return None, None, []
 
             images_urls_list = []
+            print(response.data, 'response')
             for tweet in response.data:
                 # Extract from main Tweet attachments
                 if tweet.entities.get("urls"):
