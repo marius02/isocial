@@ -146,7 +146,7 @@ class ChatRepository:
         self, user_id: uuid.UUID, chat_data: dict, client: openai.Client
     ):
         # Check if the search term has more than 2 words
-        if len(chat_data.search.split()) > 2:
+        if len(chat_data.search.split()) > 1:
             raise HTTPException(
                 status_code=400,
                 detail={
