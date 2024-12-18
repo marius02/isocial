@@ -83,7 +83,8 @@ class ChatRepository:
         if balance is None:
             raise HTTPException(status_code=404, detail="Balance not found for user")
 
-        if balance >= counted_and_decoded_tokens.get("total_tokens") + tokenForYtb:
+        # if balance >= counted_and_decoded_tokens.get("total_tokens") + tokenForYtb:
+        if balance >= 4096 + tokenForYtb:
             new_chat = Chat(
                 id=chat_data.chat_id,
                 user_id=user_id,
@@ -103,7 +104,7 @@ class ChatRepository:
                 new_response = Response(
                     question=counted_and_decoded_tokens.get("decoded_question"),
                     response=gpt_response,
-                    tokens=counted_and_decoded_tokens.get("total_tokens"),
+                    tokens=4096 + tokenForYtb,
                     chat_id=new_chat.id,
                 )
 
@@ -117,7 +118,7 @@ class ChatRepository:
 
                     # Deduct tokens from user's balance
                     await subscription_repo.decrease_user_balance(
-                        user_id, counted_and_decoded_tokens.get("total_tokens") + tokenForYtb
+                        user_id, 4096 + tokenForYtb
                     )
 
                     return new_response
@@ -187,7 +188,8 @@ class ChatRepository:
             balance = await subscription_repo.get_user_balance(user_id)
             token_tweets = len(tweets_list) * 200
 
-            if balance >= counted_and_decoded_tokens.get("total_tokens") + token_tweets:
+            # if balance >= counted_and_decoded_tokens.get("total_tokens") + token_tweets:
+            if balance >= 4096 + token_tweets:
                 new_chat = Chat(
                     search = chat_data.search,
                     id=chat_data.chat_id,
@@ -215,7 +217,7 @@ class ChatRepository:
                     response=gpt_response
                     if gpt_response
                     else counted_and_decoded_tokens.get("decoded_comments"),
-                    tokens=counted_and_decoded_tokens.get("total_tokens"),
+                    tokens= 4096 + token_tweets,
                     chat_id=new_chat.id,
                 )
 
@@ -273,7 +275,7 @@ class ChatRepository:
             & (Chat.delete == "N")
         )
         result = await self.db.execute(stmt)
-
+        tokenForYtb = 200
         chat = result.scalar()
 
         if not chat:
@@ -289,7 +291,7 @@ class ChatRepository:
         subscription_repo = SubscriptionRepository(self.db)
         balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= counted_and_decoded_tokens.get("total_tokens"):
+        if balance >= 4096:
             gpt_response = self.openai_get_completion(
                 client,
                 counted_and_decoded_tokens.get("decoded_comments"),
@@ -301,7 +303,7 @@ class ChatRepository:
                 response=gpt_response
                 if gpt_response
                 else counted_and_decoded_tokens.get("decoded_comments"),
-                tokens=counted_and_decoded_tokens.get("total_tokens"),
+                tokens= 4096,
                 chat_id=chat_data.chat_id,
             )
 
@@ -313,7 +315,7 @@ class ChatRepository:
 
                 # deduct from user token balance
                 await subscription_repo.decrease_user_balance(
-                    user_id, counted_and_decoded_tokens.get("total_tokens")
+                    user_id, 4096
                 )
 
                 return new_response
@@ -361,7 +363,7 @@ class ChatRepository:
         subscription_repo = SubscriptionRepository(self.db)
         balance = await subscription_repo.get_user_balance(user_id)
 
-        if balance >= counted_and_decoded_tokens.get("total_tokens"):
+        if balance >= 4096:
             gpt_response = self.openai_get_completion(
                 client,
                 counted_and_decoded_tokens.get("decoded_comments"),
@@ -371,7 +373,7 @@ class ChatRepository:
             new_response = Response(
                 question=counted_and_decoded_tokens.get("decoded_question"),
                 response=gpt_response,
-                tokens=counted_and_decoded_tokens.get("total_tokens"),
+                tokens=4096,
                 chat_id=chat_data.chat_id,
             )
             try:
@@ -382,7 +384,7 @@ class ChatRepository:
 
                 # deduct from user token balance
                 await subscription_repo.decrease_user_balance(
-                    user_id, counted_and_decoded_tokens.get("total_tokens")
+                    user_id, 4096
                 )
 
                 return new_response
